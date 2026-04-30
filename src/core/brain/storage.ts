@@ -1,12 +1,11 @@
 import * as fs from "node:fs/promises";
 import path from "node:path";
 import * as os from "os";
-import { renderCatalogOutputs } from "../render/index.js";
 import { applySyncPlan, planSync } from "../sync/index.js";
 import { ensureDir, listDirs, readFile } from "../utils/file-system.js";
-import { getBuiltInCatalog } from "./catalog.js";
-import { getCatalogRoot, loadBrainConfig } from "./config.js";
-import type { SyncManifestEntry } from "./types.js";
+import { loadCatalogSource } from "./catalog.js";
+import { getCatalogRoot } from "./config.js";
+import type { SyncHostResult, SyncManifestEntry } from "./types.js";
 
 function getSkillsRoot(homePath = os.homedir()): string {
   return path.join(getCatalogRoot(homePath), "skills");
@@ -29,13 +28,12 @@ export async function ensureCatalogLayout(homePath = os.homedir()): Promise<void
 export async function syncBuiltInCatalog(
   homePath = os.homedir(),
   previous: SyncManifestEntry[] = [],
-): Promise<{ tracked: SyncManifestEntry[] }> {
+): Promise<{ tracked: SyncManifestEntry[]; result: SyncHostResult }> {
   await ensureCatalogLayout(homePath);
-  const catalog = getBuiltInCatalog();
-  const outputs = renderCatalogOutputs(catalog, homePath, "2.0.0");
-  const plan = planSync("catalog", outputs, previous);
-  await applySyncPlan(plan);
-  return { tracked: plan.tracked };
+  const source = await loadCatalogSource(homePath);
+  const plan = planSync("catalog", source.outputs, previous);
+  const result = await applySyncPlan(plan);
+  return { tracked: plan.tracked, result };
 }
 
 export async function listCatalogSkillNames(homePath = os.homedir()): Promise<string[]> {

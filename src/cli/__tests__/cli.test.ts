@@ -93,7 +93,14 @@ describe("program", () => {
     expect(commandNames.has("sync")).toBe(true);
     expect(commandNames.has("doctor")).toBe(true);
     expect(commandNames.has("host")).toBe(true);
-    expect(commandNames.has("work")).toBe(true);
+    expect(commandNames.has("goal")).toBe(true);
+    expect(commandNames.has("epic")).toBe(true);
+    expect(commandNames.has("task")).toBe(true);
+    expect(commandNames.has("decision")).toBe(true);
+    expect(commandNames.has("research")).toBe(true);
+    expect(commandNames.has("runbook")).toBe(true);
+    expect(commandNames.has("concept")).toBe(true);
+    expect(commandNames.has("work")).toBe(false);
     expect(program.options.some((option) => option.long === "--json")).toBe(true);
     expect(program.version()).toBe(packageJson.version);
   });

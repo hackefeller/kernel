@@ -27,7 +27,7 @@ metadata:
     - optimize
 when:
   - a deliverable is complete and ready for sign-off
-  - a milestone has been reached and work should be reviewed before continuing
+  - an epic or task checkpoint has been reached and work should be reviewed before continuing
   - before handing off, deploying, or merging
   - after an implementation workflow completes a set of sub-issues
   - user asks to review, refactor, format, or optimize code
@@ -47,11 +47,11 @@ termination:
 outputs:
   - Review report with recommendation
   - Prioritised findings list
-  - Updated local work status or follow-up notes
+  - Updated local `.kernel` status or follow-up notes
   - Refactored code with unchanged behaviour
   - Lint-clean, formatted code
 disableModelInvocation: true
-argumentHint: work item, PR link, or file/directory to review (optional)
+argumentHint: task, PR link, or file/directory to review (optional)
 allowedTools:
   - Read
   - Grep
@@ -65,7 +65,7 @@ Answer: _is this done well enough to move forward?_
 
 ### 1. Read the local plan
 
-- Read the local work brief, plan, or task record to retrieve the goal and acceptance criteria.
+- Read the relevant `.kernel` task, epic, or goal markdown to retrieve the goal and acceptance criteria.
 - Identify the goal and what "done" means for this work.
 
 ### 2. Examine the output
@@ -117,7 +117,7 @@ Weight each dimension by what matters most for this work:
 
 ### 6. Update the local work state
 
-- If approved: mark the task or work item ready to move forward.
+- If approved: mark the task ready to move forward.
 - If needs rework: keep the task open and attach the must-fix list to the local work notes.
 - If approve with changes: record the should-fix list and decide whether the work can still advance.
 

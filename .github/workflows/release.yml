@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   release:
+    if: github.actor == 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +28,14 @@ jobs:
 
       - name: Read package version
         id: version
-        run: echo "version=$(node -p 'JSON.parse(require(\"fs\").readFileSync(\"package.json\", \"utf8\")).version')" >> "$GITHUB_OUTPUT"
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ -z "$version" ]; then
+            echo "Failed to read package version from package.json" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub release
         env:

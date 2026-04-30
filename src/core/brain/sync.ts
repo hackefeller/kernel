@@ -4,7 +4,7 @@ import * as os from "os";
 import { renderHostOutputs } from "../render/index.js";
 import { applySyncPlan, planSync } from "../sync/index.js";
 import { directoryExists, fileExists, writeFile } from "../utils/file-system.js";
-import { getBuiltInCatalog } from "./catalog.js";
+import { loadCatalogSource } from "./catalog.js";
 import { getCatalogRoot, getSyncManifestPath, loadBrainConfig } from "./config.js";
 import { getHostDescriptor, listKnownHosts } from "./hosts.js";
 import { syncBuiltInCatalog } from "./storage.js";
@@ -115,8 +115,8 @@ async function syncHost(
   previous: SyncManifestEntry[],
   homePath: string,
 ): Promise<{ result: SyncHostResult; tracked: SyncManifestEntry[] }> {
-  const catalog = getBuiltInCatalog();
-  const outputs = renderHostOutputs(catalog, hostId, homePath, "2.0.0");
+  const source = await loadCatalogSource(homePath);
+  const outputs = renderHostOutputs(source.catalog, hostId, homePath, "2.0.0");
   const plan = planSync(hostId, outputs, previous);
   const result = await applySyncPlan(plan);
   result.removed += await cleanupHostOrphans(hostId, homePath, new Set(plan.tracked.map((entry) => entry.path)));
@@ -139,15 +139,12 @@ export async function syncKernelBrain(homePath = os.homedir()): Promise<SyncResu
     homePath,
     new Set(catalogSync.tracked.map((entry) => entry.path)),
   );
-  if (catalogResultRemoved > 0) {
-    hosts.push({
-      host: "catalog",
-      created: 0,
-      updated: 0,
-      removed: catalogResultRemoved,
-      unchanged: 0,
-      tracked: catalogSync.tracked.map((entry) => entry.path),
-    });
+  const catalogResult = {
+    ...catalogSync.result,
+    removed: catalogSync.result.removed + catalogResultRemoved,
+  };
+  if (catalogResult.created > 0 || catalogResult.updated > 0 || catalogResult.removed > 0) {
+    hosts.push(catalogResult);
   }
 
   for (const hostId of config.hosts) {

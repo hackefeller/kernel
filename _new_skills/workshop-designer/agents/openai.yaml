@@ -1,0 +1,7 @@
+interface:
+  display_name: "Workshop Designer"
+  short_description: "Design practical workshop sessions."
+  default_prompt: "Use $workshop-designer to design a facilitation-ready workshop for this product challenge."
+
+policy:
+  allow_implicit_invocation: true

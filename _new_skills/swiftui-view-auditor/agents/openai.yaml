@@ -1,0 +1,4 @@
+interface:
+  display_name: "SwiftUI View Auditor"
+  short_description: "Audit SwiftUI view architecture"
+  default_prompt: "Use $swiftui-view-auditor to audit this iOS codebase's SwiftUI views and UI architecture."

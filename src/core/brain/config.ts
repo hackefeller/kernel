@@ -10,6 +10,7 @@ const HostIdSchema = z.enum(["claude", "codex", "copilot", "pi"]);
 const BrainConfigSchema = z.object({
   version: z.string().default("2.0.0"),
   hosts: z.array(HostIdSchema).default([]),
+  packages: z.array(z.string()).optional(),
 });
 
 const LEGACY_CONFIG_SCHEMA = z
@@ -51,6 +52,7 @@ function normalizeConfig(
   return BrainConfigSchema.parse({
     version: input.version ?? "2.0.0",
     hosts: input.hosts ?? input.tools ?? [],
+    packages: input.packages,
   });
 }
 
@@ -76,6 +78,7 @@ export async function saveBrainConfig(
       {
         version: normalized.version,
         hosts: normalized.hosts,
+        packages: normalized.packages,
       },
       { indent: 2, sortMapEntries: true },
     ),
@@ -95,6 +98,7 @@ export async function ensureBrainConfig(
     {
       version: "2.0.0",
       hosts: defaults.hosts ?? [],
+      packages: defaults.packages,
     },
     homePath,
   );

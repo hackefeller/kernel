@@ -5,6 +5,7 @@ export type HostId = "claude" | "codex" | "copilot" | "pi";
 export interface BrainConfig {
   version: string;
   hosts: HostId[];
+  packages?: string[];
 }
 
 export interface BuiltInCatalog {

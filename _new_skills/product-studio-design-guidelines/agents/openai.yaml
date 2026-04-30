@@ -1,0 +1,7 @@
+interface:
+  display_name: "Product Studio Design"
+  short_description: "Ponti Studios design and brand standards"
+  default_prompt: "Use $product-studio-design-guidelines to review this interface against Ponti Studios design standards."
+
+policy:
+  allow_implicit_invocation: true

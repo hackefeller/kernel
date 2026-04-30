@@ -1,0 +1,7 @@
+interface:
+  display_name: "Media Brand Strategist"
+  short_description: "Build media brand strategy systems."
+  default_prompt: "Use $media-brand-strategist to create a launch-ready strategy for this media brand idea."
+
+policy:
+  allow_implicit_invocation: true

@@ -26,7 +26,7 @@ when:
   - A deployment needs readiness validation before proceeding
   - User says 'ship', 'deploy', 'release', or 'push to production'
 termination:
-  - Readiness verdict delivered (optionally written to work item)
+  - Readiness verdict delivered (optionally written to the linked `.kernel` task)
   - Deployment executed with chosen strategy
   - Post-deploy verification complete
 outputs:
@@ -36,7 +36,7 @@ outputs:
 dependencies:
   - kernel-review
 disableModelInvocation: true
-argumentHint: branch, PR, feature, or work item to ship
+argumentHint: branch, PR, feature, or task to ship
 allowedTools:
   - bash
 ---
@@ -96,22 +96,14 @@ Ship to any environment safely. Validates production readiness first, then execu
 
 ### 3. Deliver verdict and prompt
 
-Write the verdict to a deployment record or associated work item (optional):
+Write the verdict to a deployment record or associated `.kernel` task (optional):
 
 ```bash
-# Optional: Create a deployment record
-mkdir -p kernel/deployments
-cat > kernel/deployments/$(date +%Y%m%d-%H%M%S)-<feature>.md <<EOF
-# Deployment Verdict — $(date)
-
-**Result**: PASS / FAIL
-
-[Checklist details here]
-EOF
-
-# Or if associated with a work item, add to journal:
-echo "- $(date -u +%Y-%m-%dT%H:%M:%SZ): Deployment validation: PASS" >> kernel/work/<workId>/journal.md
+# Optional: Create a deployment runbook or research note
+kernel runbook new "Deployment validation for <feature>"
 ```
+
+Or, if associated with a task, record deployment validation in `.kernel/work/tasks/active/<taskId>/task.md` under `## Journal`.
 
 - **FAIL** — list each blocking item with a description. Stop — do not proceed to deployment.
 - **PASS** — all items satisfied. Then ask:

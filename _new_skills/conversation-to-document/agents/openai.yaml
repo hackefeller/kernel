@@ -1,0 +1,4 @@
+interface:
+  display_name: "Conversation To Document"
+  short_description: "Turn transcripts into documents"
+  default_prompt: "Use $conversation-to-document to turn this raw chat transcript into a structured research document."

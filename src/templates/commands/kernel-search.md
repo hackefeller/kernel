@@ -58,9 +58,9 @@ History answers "why" — use it when the code itself does not explain its own e
 
 Find information already in the project:
 
-- Check `kernel/work/<id>/journal.md` for session notes from prior work on this item
-- Check `kernel/work/archive/` for retrospectives on completed similar work
-- Check `kernel/retrospectives/` for documented learnings
+- Check `.kernel/work/tasks/active/<id>/task.md` for current task context
+- Check `.kernel/work/tasks/archived/` for completed similar work
+- Check `.kernel/knowledge/` for decisions, research, runbooks, and concepts
 
 ## How to Report
 

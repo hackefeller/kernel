@@ -1,0 +1,4 @@
+interface:
+  display_name: "Technical Rap Lyricist"
+  short_description: "Write dense structured rap lyrics"
+  default_prompt: "Use $technical-rap-lyricist to write a technically dense full-length rap song from this theme."

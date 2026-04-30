@@ -9,13 +9,13 @@
 import { Command } from "commander";
 import packageJson from "../../package.json";
 import { registerDoctorCommand } from "./commands/doctor.js";
+import { registerEpicCommand } from "./commands/epic.js";
+import { registerGoalCommand } from "./commands/goal.js";
 import { registerHostCommand } from "./commands/host.js";
 import { registerInitCommand } from "./commands/init.js";
-import { registerInitiativeCommand } from "./commands/initiative.js";
-import { registerMilestoneCommand } from "./commands/milestone.js";
-import { registerProjectCommand } from "./commands/project.js";
+import { registerKnowledgeCommands } from "./commands/knowledge.js";
 import { registerSyncCommand } from "./commands/sync.js";
-import { registerWorkCommand } from "./commands/work.js";
+import { registerTaskCommand } from "./commands/task.js";
 
 const program = new Command();
 
@@ -30,9 +30,9 @@ registerInitCommand(program);
 registerSyncCommand(program);
 registerDoctorCommand(program);
 registerHostCommand(program);
-registerInitiativeCommand(program);
-registerProjectCommand(program);
-registerMilestoneCommand(program);
-registerWorkCommand(program);
+registerGoalCommand(program);
+registerEpicCommand(program);
+registerTaskCommand(program);
+registerKnowledgeCommands(program);
 
 export { program };

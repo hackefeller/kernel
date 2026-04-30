@@ -1,12 +1,15 @@
 import type { Command } from "commander";
 import { initializeKernel } from "../../core/brain/init.js";
+import { initializeProjectOs } from "../../core/project-os/index.js";
 import { printOutput } from "./output.js";
 
 export function registerInitCommand(program: Command): void {
   program
     .command("init")
-    .description("Initialize the local Kernel brain and sync enabled hosts")
+    .description("Initialize the Kernel brain and repo .kernel project OS")
     .action(async () => {
-      printOutput(await initializeKernel(), program.opts() as { json?: boolean });
+      const brain = await initializeKernel();
+      const project = await initializeProjectOs();
+      printOutput({ ...brain, project }, program.opts() as { json?: boolean });
     });
 }

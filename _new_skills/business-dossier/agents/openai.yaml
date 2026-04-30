@@ -1,0 +1,4 @@
+interface:
+  display_name: "Business Dossier"
+  short_description: "Build isolated business dossiers"
+  default_prompt: "Use $business-dossier to build a business dossier from this idea with isolated section generation, review, editing, and assembly QA."

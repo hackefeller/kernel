@@ -1,0 +1,7 @@
+interface:
+  display_name: "Document Builder"
+  short_description: "Build opinionated working documents."
+  default_prompt: "Use $document-builder to turn this rough input into a polished working document."
+
+policy:
+  allow_implicit_invocation: true

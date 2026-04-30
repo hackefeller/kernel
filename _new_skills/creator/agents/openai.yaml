@@ -1,0 +1,7 @@
+interface:
+  display_name: "Creator"
+  short_description: "Create videos, prompts, and art docs."
+  default_prompt: "Use $creator to turn this creative brief into the right production-ready artifact."
+
+policy:
+  allow_implicit_invocation: true

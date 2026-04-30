@@ -1,7 +1,7 @@
 import * as fs from "fs/promises";
 import * as os from "os";
 import { getBrainConfigPath, getCatalogRoot, loadBrainConfig } from "./config.js";
-import { getBuiltInCatalog } from "./catalog.js";
+import { loadCatalogSource } from "./catalog.js";
 import { renderHostOutputs } from "../render/index.js";
 import type { DoctorIssue, DoctorResult } from "./types.js";
 
@@ -17,7 +17,7 @@ export async function doctorKernel(homePath = os.homedir()): Promise<DoctorResul
     };
   }
 
-  const catalog = getBuiltInCatalog();
+  const { catalog } = await loadCatalogSource(homePath);
 
   for (const hostId of config.hosts) {
     const desired = renderHostOutputs(catalog, hostId, homePath, "2.0.0").map((output) => ({
