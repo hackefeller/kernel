@@ -98,6 +98,28 @@ kernel task new "write setup guide" --epic document-setup-path
 kernel task next
 ```
 
+## Local Workflows
+
+This repo uses `just` as the local source of truth for development and release workflows. GitHub Actions call these same recipes.
+
+```bash
+just ci                 # typecheck, test, build, and compiled-binary validation
+just validate-binary    # smoke test dist/kernel in isolated temp fixtures
+just install            # build and install kernel to ~/bin/kernel
+```
+
+Release and publish commands are dry-run by default unless explicitly confirmed:
+
+```bash
+just version-dry-run patch
+just release-dry-run
+just publish-dry-run
+
+just version-bump patch
+just release confirm=true
+just publish confirm=true
+```
+
 ## Design Principles
 
 - Define once locally, sync everywhere

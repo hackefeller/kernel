@@ -20,7 +20,7 @@
     "url": "git+https://github.com/hackefeller/kernel.git"
   },
   "bin": {
-    "kernel": "./dist/kernel"
+    "kernel": "dist/kernel"
   },
   "files": [
     "dist"

@@ -24,15 +24,15 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
-        run: npm install --ignore-scripts
+      - uses: extractions/setup-just@v3
+
       - name: Configure git author
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Bump patch version
-        run: npm version patch --no-git-tag-version
+        run: just version-bump patch
 
       - name: Commit and push version bump
         run: |

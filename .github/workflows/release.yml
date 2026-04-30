@@ -23,32 +23,9 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
-        run: npm install --ignore-scripts
-
-      - name: Read package version
-        id: version
-        shell: bash
-        run: |
-          version="$(node -p "require('./package.json').version")"
-          if [ -z "$version" ]; then
-            echo "Failed to read package version from package.json" >&2
-            exit 1
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: extractions/setup-just@v3
 
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          tag="v${{ steps.version.outputs.version }}"
-
-          if gh release view "$tag" >/dev/null 2>&1; then
-            echo "Release $tag already exists."
-            exit 0
-          fi
-
-          gh release create "$tag" \
-            --title "$tag" \
-            --target "$GITHUB_SHA" \
-            --notes "Kernel ${{ steps.version.outputs.version }}"
+        run: just release confirm=true
