@@ -13,7 +13,7 @@ export async function doctorKernel(homePath = os.homedir()): Promise<DoctorResul
       configPath: getBrainConfigPath(homePath),
       catalogPath: getCatalogRoot(homePath),
       hosts: [],
-      issues: [{ level: "error", message: "Kernel is not initialized. Run `kernel init` first." }],
+      issues: [{ level: "error", message: "Kernel is not initialized. Run `kernel sync` first." }],
     };
   }
 

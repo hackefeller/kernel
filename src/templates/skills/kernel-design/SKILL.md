@@ -181,6 +181,8 @@ Deviation from this spec requires explicit justification, a concrete tradeoff, a
 - On close, return focus to the trigger element.
 - Never `tabIndex > 0`.
 - `aria-label` on all icon-only buttons.
+- Never hide essential controls behind hover; every action must be reachable with keyboard, focus, or touch without depending on pointer hover.
+- Treat hover-only visibility as a bug unless the component is a tooltip with purely supplemental information.
 
 ### Interaction states
 

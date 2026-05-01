@@ -89,7 +89,7 @@ describe("program", () => {
     const { program } = await import("../index.js");
     const commandNames = new Set(program.commands.map((command) => command.name()));
 
-    expect(commandNames.has("init")).toBe(true);
+    expect(commandNames.has("init")).toBe(false);
     expect(commandNames.has("sync")).toBe(true);
     expect(commandNames.has("doctor")).toBe(true);
     expect(commandNames.has("host")).toBe(true);

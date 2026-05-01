@@ -27,7 +27,6 @@ export interface TemplateRegistry {
 }
 
 const DEFAULT_COMMAND_TARGETS = new Set([
-  "init",
   "sync",
   "doctor",
   "goal new",

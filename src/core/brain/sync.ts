@@ -5,8 +5,8 @@ import { renderHostOutputs } from "../render/index.js";
 import { applySyncPlan, planSync } from "../sync/index.js";
 import { directoryExists, fileExists, writeFile } from "../utils/file-system.js";
 import { loadCatalogSource } from "./catalog.js";
-import { getCatalogRoot, getSyncManifestPath, loadBrainConfig } from "./config.js";
-import { getHostDescriptor, listKnownHosts } from "./hosts.js";
+import { ensureBrainConfig, getCatalogRoot, getSyncManifestPath, loadBrainConfig } from "./config.js";
+import { detectInstalledHosts, getHostDescriptor, listKnownHosts } from "./hosts.js";
 import { syncBuiltInCatalog } from "./storage.js";
 import type {
     HostId,
@@ -124,9 +124,16 @@ async function syncHost(
 }
 
 export async function syncKernelBrain(homePath = os.homedir()): Promise<SyncResult> {
-  const config = await loadBrainConfig(homePath);
-  if (!config) {
-    throw new Error("Kernel is not initialized. Run `kernel init` first.");
+  const existingConfig = await loadBrainConfig(homePath);
+
+  if (!existingConfig) {
+    const detectedHosts = await detectInstalledHosts(homePath);
+    const hosts: HostId[] = detectedHosts.length > 0 ? detectedHosts : ["codex"];
+    await ensureBrainConfig(homePath, { hosts });
+  }
+  const activeConfig = existingConfig ?? (await loadBrainConfig(homePath));
+  if (!activeConfig) {
+    throw new Error("Unable to load Kernel configuration.");
   }
 
   const manifest = await loadSyncManifest(homePath);
@@ -147,7 +154,7 @@ export async function syncKernelBrain(homePath = os.homedir()): Promise<SyncResu
     hosts.push(catalogResult);
   }
 
-  for (const hostId of config.hosts) {
+  for (const hostId of activeConfig.hosts) {
     const { result, tracked } = await syncHost(
       hostId,
       manifest.scopes[hostId] ?? [],
@@ -158,7 +165,7 @@ export async function syncKernelBrain(homePath = os.homedir()): Promise<SyncResu
   }
 
   for (const hostId of listKnownHosts()) {
-    if (!config.hosts.includes(hostId)) {
+    if (!activeConfig.hosts.includes(hostId)) {
       const removed = await cleanupHostOrphans(hostId, homePath, new Set());
       if (removed > 0) {
         hosts.push({

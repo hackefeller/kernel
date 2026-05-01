@@ -71,7 +71,6 @@ It also gives each repo a committed `.kernel/` directory that acts as the full l
 ## CLI
 
 ```text
-kernel init
 kernel sync
 kernel doctor
 kernel host list
@@ -91,7 +90,7 @@ kernel concept new "<title>"
 
 ```bash
 npm install -g @hackefeller/kernel
-kernel init
+kernel sync
 kernel goal new "make onboarding effortless"
 kernel epic new "document setup path" --goal make-onboarding-effortless
 kernel task new "write setup guide" --epic document-setup-path

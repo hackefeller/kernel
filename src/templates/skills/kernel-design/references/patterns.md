@@ -203,7 +203,7 @@ Haptic feedback on destructive confirmations (react-native's HapticFeedback or E
 - Search: client-side title filter — no re-fetch.
 - GSAP stagger on new items: `x: -6 → 0, opacity: 0 → 1, duration: 0.15, stagger: 0.03` on first 5.
 - Row icons: `FileText` for notes, `MessageSquare` for chats — both `size-3.5 opacity-50`.
-- Overflow (···) menu: hidden at `text-sidebar-foreground/0`, fades to `/40` on row hover, full opacity on button hover.
+- Overflow (···) menu: visible by default at `text-sidebar-foreground/40`, strengthens to full opacity on row hover/focus and button hover — never hide the action entirely.
 
 ### Hover/focus states on list rows
 
@@ -217,6 +217,7 @@ Haptic feedback on destructive confirmations (react-native's HapticFeedback or E
 
 Active state (/60) is stronger than hover (/40) to clearly indicate selection.
 Icon/button children add `transition-colors duration-150` to stay in sync with the row.
+Hover may refine emphasis, but must never be the only way to discover or access a control.
 
 ---
 

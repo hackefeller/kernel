@@ -569,7 +569,6 @@ describe("COMMAND_NAMES", () => {
   });
 
   it("expected commands are defined", () => {
-    expect(COMMAND_NAMES.INIT).toBe("kernel-init");
     expect(COMMAND_NAMES.SYNC).toBe("kernel-sync");
     expect(COMMAND_NAMES.DOCTOR).toBe("kernel-doctor");
     expect(COMMAND_NAMES.GH_PR_ERRORS).toBe("kernel-gh-pr-errors");

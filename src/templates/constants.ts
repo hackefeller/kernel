@@ -79,7 +79,6 @@ export const AGENT_NAMES = {
 } as const;
 
 export const COMMAND_NAMES = {
-  INIT: prefixKernelTemplateName("init"),
   SYNC: prefixKernelTemplateName("sync"),
   DOCTOR: prefixKernelTemplateName("doctor"),
   GH_PR_ERRORS: prefixKernelTemplateName("gh-pr-errors"),

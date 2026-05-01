@@ -12,7 +12,6 @@ import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerEpicCommand } from "./commands/epic.js";
 import { registerGoalCommand } from "./commands/goal.js";
 import { registerHostCommand } from "./commands/host.js";
-import { registerInitCommand } from "./commands/init.js";
 import { registerKnowledgeCommands } from "./commands/knowledge.js";
 import { registerSyncCommand } from "./commands/sync.js";
 import { registerTaskCommand } from "./commands/task.js";
@@ -26,7 +25,6 @@ program
   .option("--json", "Emit JSON output instead of human-readable output")
   .showHelpAfterError();
 
-registerInitCommand(program);
 registerSyncCommand(program);
 registerDoctorCommand(program);
 registerHostCommand(program);

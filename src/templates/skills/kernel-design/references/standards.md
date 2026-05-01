@@ -160,6 +160,10 @@ Fail the review if any of the following are violated:
 - [ ] No `tabIndex > 0`
 - [ ] Alt text on non-decorative images
 - [ ] `aria-label` on icon-only buttons
+- [ ] Controls are not hidden behind hover; keyboard, focus, and touch users see the same action affordance.
+- [ ] Live region or native accessibility announcement exists for meaningful async state changes (saving, uploading, errors, completion)
+- [ ] Form fields expose labels, help text, and error text via programmatic associations
+- [ ] Color is never the only state signal for selection, error, or disabled state
 
 ### Components & states
 

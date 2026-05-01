@@ -79,7 +79,7 @@ Each turn consists of layers in this order:
 5. **Main content** — bubble (user) or plain (assistant)
 6. **Focus items** — referenced notes, collapsed by default
 7. **Metadata** — sender label · timestamp, `body-4`, `text-tertiary`
-8. **Actions** — hidden on hover (web), always visible (mobile)
+8. **Actions** — always visible; hover may refine emphasis, but never gate visibility
 
 **Gap between layers:** 8px (`chatTokens.contentGap`)
 **Turn gap (between messages):** 20px (`chatTokens.turnGap`)
@@ -149,8 +149,8 @@ The user bubble uses the warm amber accent as its background. Text is dark (ston
 
 | Property     | Value                                                               |
 | ------------ | ------------------------------------------------------------------- |
-| Visibility   | Hidden by default, visible on hover (web) / always visible (mobile) |
-| Transition   | CSS `opacity 120ms ease` on group hover                             |
+| Visibility   | Always visible                                      |
+| Transition   | CSS `transition-colors duration-150`; use emphasis changes, not hide/show |
 | Touch target | 44×44px minimum                                                     |
 | aria-label   | Required on every icon-only button                                  |
 

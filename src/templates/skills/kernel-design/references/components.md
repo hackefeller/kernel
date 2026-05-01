@@ -337,7 +337,7 @@ Always include `aria-label` or `<caption>`.
 Inline code: bg-inset, radii.sm, 2px 6px padding, same mono font.
 Syntax highlighting: use the project's configured highlighter (react-syntax-highlighter or shiki).
 Language label: subheading-4 (11px), text-tertiary, top-right corner of block.
-Copy button: icon-only, 32px, appears on hover.
+Copy button: icon-only, 32px, always visible; may use subtle emphasis changes on hover/focus, but never hide behind hover.
 
 ---
 
