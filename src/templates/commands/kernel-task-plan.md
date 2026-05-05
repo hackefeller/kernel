@@ -2,7 +2,7 @@
 name: kernel-task-plan
 kind: command
 tags: [workflow, planning]
-description: Refine the single task markdown file.
+description: Refine the checklist, acceptance criteria, and context in an active task's markdown file.
 group: workflow
 target: task plan
 argumentHint: optional task id

@@ -8,4 +8,4 @@ target: task status
 argumentHint: optional task id
 ---
 
-Use this to inspect the active task without changing state.
+Use this to inspect the active task without changing state. The next unchecked checklist item is included in the output.

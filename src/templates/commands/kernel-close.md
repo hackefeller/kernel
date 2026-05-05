@@ -17,4 +17,4 @@ Closeout means:
 - Verify the `.kernel` record reflects reality
 - Archive completed tasks or mark goals/epics done
 - Create follow-up tasks for deferred work
-- Capture reusable lessons as decisions, research, runbooks, or concepts under `.kernel/knowledge/`
+- Capture reusable lessons as research, runbooks, concepts, or learnings under `.kernel/knowledge/`

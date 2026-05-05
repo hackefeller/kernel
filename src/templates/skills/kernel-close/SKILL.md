@@ -30,4 +30,4 @@ allowedTools:
 
 Close work in `.kernel` without losing project memory.
 
-Use `kernel task archive`, `kernel epic done`, and `kernel goal done` for lifecycle closure. Deferred work gets a new task. Reusable rationale gets a decision, research, runbook, or concept record.
+Use `kernel task archive`, `kernel epic done`, and `kernel goal done` for lifecycle closure. Deferred work gets a new task. Reusable rationale gets a research, runbook, or concept record.

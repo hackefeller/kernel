@@ -10,4 +10,4 @@ argumentHint: title
 
 Create a task for one executable unit of work.
 
-Use `--epic <epicId>` or `--goal <goalId>` for parent linkage. Use `--knowledge <ids>` for linked decisions, research, runbooks, or concepts.
+Use `--epic <epicId>` or `--goal <goalId>` for parent linkage. Use `--knowledge <ids>` for linked research, runbooks, or concepts.

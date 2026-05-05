@@ -37,7 +37,7 @@ function registerKnowledgeKind(program: Command, kind: KnowledgeKind): void {
     printOutput(await listKnowledge(kind), program.opts() as { json?: boolean });
   });
 
-  if (kind === "decision" || kind === "research") {
+  if (kind === "research") {
     command.command("status <id>").description(`Show status for a ${kind}`).action(async (id: string) => {
       printOutput(await knowledgeStatus(kind, id), program.opts() as { json?: boolean });
     });
@@ -45,7 +45,6 @@ function registerKnowledgeKind(program: Command, kind: KnowledgeKind): void {
 }
 
 export function registerKnowledgeCommands(program: Command): void {
-  registerKnowledgeKind(program, "decision");
   registerKnowledgeKind(program, "research");
   registerKnowledgeKind(program, "runbook");
   registerKnowledgeKind(program, "concept");

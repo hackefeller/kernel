@@ -46,7 +46,6 @@ Plan work and knowledge in the repo-local `.kernel` project OS. `.kernel` is com
 | Strategic outcome or direction | Goal |
 | Coherent deliverable or phase | Epic |
 | Executable unit of work | Task |
-| Durable rationale | Decision |
 | Investigation or findings | Research |
 | Repeatable procedure | Runbook |
 | Domain term or concept | Concept |
@@ -66,7 +65,6 @@ Default to the smallest record that fully contains the work. A concrete implemen
 - `kernel goal new "<title>"`
 - `kernel epic new "<title>" --goal <goalId>`
 - `kernel task new "<title>" --epic <epicId>`
-- `kernel decision new "<title>"`
 - `kernel research new "<title>"`
 - `kernel runbook new "<title>"`
 - `kernel concept new "<title>"`
@@ -78,7 +76,7 @@ Each record has exactly one markdown file plus one YAML tracking file:
 - Goal: `.kernel/work/goals/<id>/goal.md`
 - Epic: `.kernel/work/epics/<id>/epic.md`
 - Task: `.kernel/work/tasks/active/<id>/task.md`
-- Knowledge: `.kernel/knowledge/decisions|research|runbooks|concepts/<id>/<kind>.md`
+- Knowledge: `.kernel/knowledge/research|runbooks|concepts/<id>/<kind>.md`
 
 The markdown file should contain the useful project memory: summary, context, acceptance criteria or details, plan, linked records, checklist when applicable, journal, and follow-ups.
 

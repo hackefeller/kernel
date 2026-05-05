@@ -1,6 +1,6 @@
 export type RecordStatus = "active" | "done" | "archived";
 
-export type KnowledgeKind = "decision" | "research" | "runbook" | "concept";
+export type KnowledgeKind = "research" | "runbook" | "concept";
 
 export interface ChecklistItem {
   id: string;
@@ -69,7 +69,6 @@ export interface ProjectOsLayout {
   activeTasksDir: string;
   archivedTasksDir: string;
   knowledgeDir: string;
-  decisionsDir: string;
   researchDir: string;
   runbooksDir: string;
   conceptsDir: string;

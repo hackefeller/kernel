@@ -32,6 +32,6 @@ allowedTools:
 
 Read `.kernel` and report what is true right now.
 
-Use `kernel goal list`, `kernel epic list`, `kernel task list`, and the knowledge list commands to gather facts. Use `kernel task next` when the user asks what to do next.
+Use `kernel goal list`, `kernel epic list`, `kernel task list`, and `kernel knowledge list` to gather facts. Run `kernel task status` when the user asks what to do next — the next unchecked item is included in the output.
 
 Report only facts from `.kernel` records. If a record is stale or unclear, call that out and recommend the next update.

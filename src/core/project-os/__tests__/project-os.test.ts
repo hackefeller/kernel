@@ -46,7 +46,7 @@ describe(".kernel project OS", () => {
     await expect(fs.stat(path.join(tmpDir, ".kernel", "README.md"))).resolves.toBeDefined();
     await expect(fs.stat(path.join(tmpDir, ".kernel", "project.md"))).resolves.toBeDefined();
     await expect(fs.stat(path.join(tmpDir, ".kernel", "work", "tasks", "active"))).resolves.toBeDefined();
-    await expect(fs.stat(path.join(tmpDir, ".kernel", "knowledge", "decisions"))).resolves.toBeDefined();
+    await expect(fs.stat(path.join(tmpDir, ".kernel", "knowledge", "research"))).resolves.toBeDefined();
   });
 
   it("creates one markdown file plus one yaml file per work record", async () => {
@@ -70,18 +70,18 @@ describe(".kernel project OS", () => {
     tmpDir = await mkTmpDir();
     await fs.writeFile(path.join(tmpDir, "package.json"), '{"name":"kernel-test"}');
 
-    const decision = await createKnowledge("decision", "Use SQLite locally", {}, tmpDir);
-    const task = await createTask("Wire local storage", { linkedKnowledgeIds: [decision.knowledgeId] }, tmpDir);
+    const research = await createKnowledge("research", "Use SQLite locally", {}, tmpDir);
+    const task = await createTask("Wire local storage", { linkedKnowledgeIds: [research.knowledgeId] }, tmpDir);
 
-    expect(await listNames(path.join(tmpDir, ".kernel", "knowledge", "decisions", decision.knowledgeId))).toEqual([
-      "decision.md",
-      "decision.yaml",
+    expect(await listNames(path.join(tmpDir, ".kernel", "knowledge", "research", research.knowledgeId))).toEqual([
+      "research.md",
+      "research.yaml",
     ]);
-    expect(await listKnowledge("decision", tmpDir)).toEqual({
-      items: [{ id: decision.knowledgeId, title: "Use SQLite locally", kind: "decision", status: "active" }],
+    expect(await listKnowledge("research", tmpDir)).toEqual({
+      items: [{ id: research.knowledgeId, title: "Use SQLite locally", kind: "research", status: "active" }],
     });
     const taskMarkdown = await fs.readFile(path.join(tmpDir, task.taskDir, "task.md"), "utf-8");
-    expect(taskMarkdown).toContain(decision.knowledgeId);
+    expect(taskMarkdown).toContain(research.knowledgeId);
   });
 
   it("updates checklist state and journal inside task.md", async () => {

@@ -15,7 +15,7 @@ Before editing code:
 
 1. Run `kernel task status`.
 2. Read `.kernel/work/tasks/active/<task-id>/task.md`.
-3. Run `kernel task next` to confirm the next checklist item.
+3. Note the next unchecked checklist item from the status output.
 
 After verifying a checklist item, run:
 

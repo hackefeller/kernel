@@ -2,7 +2,7 @@
 name: kernel-goal-plan
 kind: command
 tags: [workflow, planning]
-description: Refine the single goal markdown file.
+description: Refine the success criteria, epic breakdown, and strategic context in a goal's markdown file.
 group: workflow
 target: goal plan
 argumentHint: optional goal id

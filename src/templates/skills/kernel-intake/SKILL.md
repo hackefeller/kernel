@@ -31,6 +31,6 @@ Classify incoming work into `.kernel`.
 - Strategic outcome: `kernel goal new`
 - Coherent deliverable: `kernel epic new`
 - Executable work: `kernel task new`
-- Durable rationale or reusable context: `kernel decision|research|runbook|concept new`
+- Durable rationale or reusable context: `kernel research|runbook|concept new`
 
 Before creating a record, search existing `.kernel/work/` and `.kernel/knowledge/` to avoid duplicates. Link knowledge records instead of copying context into task files.

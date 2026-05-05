@@ -96,7 +96,7 @@ describe("program", () => {
     expect(commandNames.has("goal")).toBe(true);
     expect(commandNames.has("epic")).toBe(true);
     expect(commandNames.has("task")).toBe(true);
-    expect(commandNames.has("decision")).toBe(true);
+    expect(commandNames.has("decision")).toBe(false);
     expect(commandNames.has("research")).toBe(true);
     expect(commandNames.has("runbook")).toBe(true);
     expect(commandNames.has("concept")).toBe(true);

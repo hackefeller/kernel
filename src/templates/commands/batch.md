@@ -4,7 +4,7 @@ kind: command
 tags:
   - workflow
 description: Orchestrate large-scale changes across a codebase in parallel — decompose, plan, get approval, then execute each unit in isolation.
-group: workflow
+group: specialist
 argumentHint: description of the change to make at scale (e.g., 'rename all occurrences of UserModel to User')
 ---
 

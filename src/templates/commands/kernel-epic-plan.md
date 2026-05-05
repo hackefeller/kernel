@@ -2,7 +2,7 @@
 name: kernel-epic-plan
 kind: command
 tags: [workflow, planning]
-description: Refine the single epic markdown file.
+description: Refine the scope, task breakdown, and acceptance criteria in an epic's markdown file.
 group: workflow
 target: epic plan
 argumentHint: optional epic id

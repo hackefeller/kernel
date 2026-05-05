@@ -4,7 +4,7 @@ kind: command
 tags:
   - git
   - debugging
-description: gh-pr-errors command
+description: Fetch the latest GitHub Actions errors for the open pull request on the current branch.
 group: specialist
 backedBySkill: kernel-git
 allowedTools:

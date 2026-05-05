@@ -41,28 +41,20 @@ const DEFAULT_COMMAND_TARGETS = new Set([
   "epic done",
   "task new",
   "task plan",
-  "task next",
   "task done",
   "task status",
   "task archive",
   "task list",
-  "task restore",
-  "decision new",
-  "decision list",
-  "decision status",
   "research new",
-  "research list",
-  "research status",
   "runbook new",
-  "runbook list",
   "concept new",
-  "concept list",
+  "knowledge list",
 ]);
 
 const registryCache = new Map<string, TemplateRegistry>();
 
 const TemplateProfileSchema = z.enum(["core", "extended"] satisfies [TemplateProfile, ...TemplateProfile[]]);
-const CommandGroupSchema = z.enum(["system", "workflow", "specialist", "development"]);
+const CommandGroupSchema = z.enum(["system", "workflow", "specialist"]);
 const PermissionModeSchema = z.enum(["default", "acceptEdits", "dontAsk", "bypassPermissions", "plan"]);
 const SandboxModeSchema = z.enum(["read-only", "workspace-write", "danger-full-access"]);
 const ReasoningEffortSchema = z.enum(["low", "medium", "high"]);

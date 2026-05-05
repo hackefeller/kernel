@@ -31,5 +31,5 @@ Outcomes:
 - Resolve and continue
 - Update the task plan/checklist
 - Create a follow-up task
-- Capture missing context as research, decision, runbook, or concept
+- Capture missing context as research, runbook, or concept
 - Re-plan if scope changed

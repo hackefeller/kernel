@@ -4,7 +4,7 @@ kind: command
 tags:
   - git
 description: Git specialist for branch strategy, commit hygiene, merge conflict resolution, and history analysis.
-group: development
+group: specialist
 argumentHint: git operation or question (e.g., 'resolve merge conflict', 'rebase feature branch')
 backedBySkill: kernel-git
 ---

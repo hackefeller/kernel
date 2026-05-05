@@ -17,7 +17,7 @@ when:
 termination:
   - Findings are written or linked in .kernel
 outputs:
-  - Research or decision records linked to work
+  - Research records linked to work
 disableModelInvocation: true
 allowedTools:
   - bash
@@ -28,5 +28,5 @@ allowedTools:
 Investigate unknowns and route findings to the right `.kernel` home.
 
 - If the finding changes execution, update the relevant `task.md`, `epic.md`, or `goal.md`.
-- If the finding is reusable, create `kernel research new` or `kernel decision new` and link it from the work record.
+- If the finding is reusable, create `kernel research new` and link it from the work record.
 - Keep evidence grounded in source files, command output, or existing `.kernel` records.

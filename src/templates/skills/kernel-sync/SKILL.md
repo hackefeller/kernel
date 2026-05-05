@@ -24,4 +24,4 @@ allowedTools:
 
 Audit `.kernel` against the repo. Present a drift report before changing records.
 
-Check active tasks, archived tasks, goals, epics, and linked knowledge. Mark checklist items done only after verifying code or tests. Capture durable findings as linked decision, research, runbook, or concept records.
+Check active tasks, archived tasks, goals, epics, and linked knowledge. Mark checklist items done only after verifying code or tests. Capture durable findings as linked research, runbook, or concept records.

@@ -64,7 +64,6 @@ export async function resolveProjectOs(startDir = process.cwd()): Promise<Projec
     activeTasksDir: join(workDir, "tasks", "active"),
     archivedTasksDir: join(workDir, "tasks", "archived"),
     knowledgeDir,
-    decisionsDir: join(knowledgeDir, "decisions"),
     researchDir: join(knowledgeDir, "research"),
     runbooksDir: join(knowledgeDir, "runbooks"),
     conceptsDir: join(knowledgeDir, "concepts"),
@@ -78,7 +77,6 @@ async function ensureProjectOsLayout(layout: ProjectOsLayout): Promise<void> {
   await ensureDir(layout.epicsDir);
   await ensureDir(layout.activeTasksDir);
   await ensureDir(layout.archivedTasksDir);
-  await ensureDir(layout.decisionsDir);
   await ensureDir(layout.researchDir);
   await ensureDir(layout.runbooksDir);
   await ensureDir(layout.conceptsDir);
@@ -97,7 +95,6 @@ This directory is the committed project operating system for this repository.
 - \`work/epics/\` - coherent deliverables under goals
 - \`work/tasks/active/\` - executable work
 - \`work/tasks/archived/\` - completed task records
-- \`knowledge/decisions/\` - durable technical and product decisions
 - \`knowledge/research/\` - investigations and findings
 - \`knowledge/runbooks/\` - operational procedures
 - \`knowledge/concepts/\` - glossary and domain concepts
@@ -151,7 +148,7 @@ function defaultChecklist(): ChecklistItem[] {
     { id: "clarify-scope", title: "Clarify scope and acceptance criteria", done: false },
     { id: "implement-core-path", title: "Implement the core path", done: false },
     { id: "verify-behavior", title: "Verify behavior", done: false },
-    { id: "capture-knowledge", title: "Capture decisions and follow-ups", done: false },
+    { id: "capture-knowledge", title: "Capture knowledge and follow-ups", done: false },
   ];
 }
 
@@ -826,8 +823,6 @@ export async function restoreTask(taskId: string, startDir = process.cwd()) {
 
 function knowledgeDirForKind(layout: ProjectOsLayout, kind: KnowledgeKind): string {
   switch (kind) {
-    case "decision":
-      return layout.decisionsDir;
     case "research":
       return layout.researchDir;
     case "runbook":

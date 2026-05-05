@@ -41,7 +41,7 @@ Work from `.kernel/work/tasks/active/<task-id>/task.md`. One task, one checklist
 
 1. Run `kernel task status [taskId]`.
 2. Read the task's `task.md`.
-3. Run `kernel task next [taskId]`.
+3. Run `kernel task status [taskId]` and read the next unchecked item.
 4. State the observable completion criterion.
 5. Implement only that checklist item.
 6. Verify with tests or manual checks.
@@ -52,5 +52,5 @@ Work from `.kernel/work/tasks/active/<task-id>/task.md`. One task, one checklist
 
 - Do not create `brief.md`, `plan.md`, `tasks.md`, or `journal.md`.
 - Do not mark checklist items done before verification.
-- Do not duplicate decisions or research in multiple tasks; link knowledge records.
+- Do not duplicate research in multiple tasks; link knowledge records.
 - Stop and re-plan if the task scope changes.
