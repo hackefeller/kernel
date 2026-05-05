@@ -13,11 +13,15 @@ import {
 import { slugify } from "../utils/slugify.js";
 import type {
   ChecklistItem,
+  EpicFrontmatter,
   EpicRecord,
+  GoalFrontmatter,
   GoalRecord,
+  KnowledgeFrontmatter,
   KnowledgeKind,
   KnowledgeRecord,
   ProjectOsLayout,
+  TaskFrontmatter,
   TaskRecord,
 } from "./types.js";
 
@@ -160,7 +164,12 @@ async function readPointers(layout: ProjectOsLayout): Promise<{ currentTaskId: s
   if (!(await fileExists(layout.pointersPath))) {
     return { currentTaskId: null };
   }
-  return JSON.parse(await readFile(layout.pointersPath)) as { currentTaskId: string | null };
+  const parsed: { currentTaskId: string | null } = JSON.parse(await readFile(layout.pointersPath));
+  return parsed;
+}
+
+function isNodeErrnoException(error: unknown): error is NodeJS.ErrnoException {
+  return typeof error === "object" && error !== null && "code" in error;
 }
 
 async function nextUniqueId(parentDir: string, title: string, fallback: string): Promise<string> {
@@ -173,6 +182,143 @@ async function nextUniqueId(parentDir: string, title: string, fallback: string):
     index += 1;
   }
   return id;
+}
+
+interface MarkdownRecord<RecordFrontmatter extends object> {
+  frontmatter: RecordFrontmatter;
+  body: string;
+}
+
+function pruneMarkdownValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    const items = value.map((item) => pruneMarkdownValue(item)).filter((item) => item !== undefined);
+    return items.length > 0 ? items : undefined;
+  }
+  if (value && typeof value === "object") {
+    const entries: [string, unknown][] = [];
+    for (const [key, entry] of Object.entries(value)) {
+      const pruned = pruneMarkdownValue(entry);
+      if (pruned !== undefined) {
+        entries.push([key, pruned]);
+      }
+    }
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+  }
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  return value;
+}
+
+function serializeMarkdownRecord<RecordFrontmatter extends object>(
+  frontmatter: RecordFrontmatter,
+  body: string,
+): string {
+  const content = pruneMarkdownValue(frontmatter);
+  const frontmatterBlock = content ? yaml.stringify(content).trim() : "";
+  return frontmatterBlock
+    ? `---\n${frontmatterBlock}\n---\n\n${body.trim()}\n`
+    : `${body.trim()}\n`;
+}
+
+async function readMarkdownRecord<RecordFrontmatter extends object>(
+  markdownPath: string,
+  sidecarPath?: string,
+): Promise<MarkdownRecord<RecordFrontmatter>> {
+  const content = await readFile(markdownPath);
+  const delimiter = "---";
+  if (!content.startsWith(delimiter)) {
+    const frontmatter: RecordFrontmatter = yaml.parse("{}") ?? {};
+    return { frontmatter, body: content };
+  }
+
+  const end = content.indexOf(`\n${delimiter}`, delimiter.length);
+  if (end === -1) {
+    const frontmatter: RecordFrontmatter = yaml.parse("{}") ?? {};
+    return { frontmatter, body: content };
+  }
+
+  const raw = content.slice(delimiter.length, end).trim();
+  const body = content.slice(end + delimiter.length + 1).trimStart();
+  let frontmatter: RecordFrontmatter = yaml.parse("{}") ?? {};
+  try {
+    frontmatter = yaml.parse(raw) ?? {};
+  } catch {
+    // Malformed frontmatter — treat as empty.
+  }
+  if (Object.keys(frontmatter).length > 0 || !sidecarPath) {
+    return { frontmatter, body };
+  }
+  if (await fileExists(sidecarPath)) {
+    const sidecarFrontmatter: RecordFrontmatter = yaml.parse(await readFile(sidecarPath)) ?? {};
+    return { frontmatter: sidecarFrontmatter, body };
+  }
+  return { frontmatter, body };
+}
+
+async function writeMarkdownRecord<RecordFrontmatter extends object>(
+  markdownPath: string,
+  frontmatter: RecordFrontmatter,
+  body: string,
+): Promise<void> {
+  await writeFile(markdownPath, serializeMarkdownRecord(frontmatter, body));
+}
+
+function goalFrontmatter(record: GoalRecord): GoalFrontmatter {
+  return {
+    id: record.id,
+    title: record.title,
+    status: record.status,
+    tags: record.tags,
+    linkedKnowledgeIds: record.linkedKnowledgeIds,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    doneAt: record.doneAt,
+  };
+}
+
+function epicFrontmatter(record: EpicRecord): EpicFrontmatter {
+  return {
+    id: record.id,
+    title: record.title,
+    status: record.status,
+    goalId: record.goalId,
+    targetDate: record.targetDate,
+    tags: record.tags,
+    linkedKnowledgeIds: record.linkedKnowledgeIds,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    doneAt: record.doneAt,
+  };
+}
+
+function taskFrontmatter(record: TaskRecord): TaskFrontmatter {
+  return {
+    id: record.id,
+    title: record.title,
+    status: record.status,
+    goalId: record.goalId,
+    epicId: record.epicId,
+    tags: record.tags,
+    linkedKnowledgeIds: record.linkedKnowledgeIds,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    doneAt: record.doneAt,
+    checklist: record.checklist,
+  };
+}
+
+function knowledgeFrontmatter(record: KnowledgeRecord): KnowledgeFrontmatter {
+  return {
+    id: record.id,
+    title: record.title,
+    status: record.status,
+    kind: record.kind,
+    tags: record.tags,
+    linkedWorkIds: record.linkedWorkIds,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  };
 }
 
 function renderLinkList(ids: string[] | undefined): string {
@@ -247,7 +393,9 @@ ${renderLinkList(record.linkedKnowledgeIds)}
 }
 
 function renderTaskMarkdown(record: TaskRecord): string {
-  const checklist = record.checklist.map((item) => `- [${item.done ? "x" : " "}] ${item.title}`).join("\n");
+  const checklist = record.checklist
+    .map((item) => `- [${item.done ? "x" : " "}] ${item.title}`)
+    .join("\n");
   return `# ${record.title}
 
 ## Summary
@@ -306,59 +454,84 @@ ${renderLinkList(record.linkedWorkIds)}
 async function saveGoal(layout: ProjectOsLayout, record: GoalRecord): Promise<void> {
   const root = join(layout.goalsDir, record.id);
   await ensureDir(root);
-  await writeFile(join(root, "goal.yaml"), yaml.stringify(record));
-  if (!(await fileExists(join(root, "goal.md")))) {
-    await writeFile(join(root, "goal.md"), renderGoalMarkdown(record));
-  }
+  const markdownPath = join(root, "goal.md");
+  const sidecarPath = join(root, "goal.yaml");
+  const existing = (await fileExists(markdownPath))
+    ? await readMarkdownRecord<GoalFrontmatter>(markdownPath, sidecarPath)
+    : null;
+  const body =
+    existing && existing.body.trim().length > 0 ? existing.body : renderGoalMarkdown(record);
+  await writeMarkdownRecord(markdownPath, goalFrontmatter(record), body);
 }
 
 async function saveEpic(layout: ProjectOsLayout, record: EpicRecord): Promise<void> {
   const root = join(layout.epicsDir, record.id);
   await ensureDir(root);
-  await writeFile(join(root, "epic.yaml"), yaml.stringify(record));
-  if (!(await fileExists(join(root, "epic.md")))) {
-    await writeFile(join(root, "epic.md"), renderEpicMarkdown(record));
-  }
+  const markdownPath = join(root, "epic.md");
+  const sidecarPath = join(root, "epic.yaml");
+  const existing = (await fileExists(markdownPath))
+    ? await readMarkdownRecord<EpicFrontmatter>(markdownPath, sidecarPath)
+    : null;
+  const body =
+    existing && existing.body.trim().length > 0 ? existing.body : renderEpicMarkdown(record);
+  await writeMarkdownRecord(markdownPath, epicFrontmatter(record), body);
 }
 
 async function saveTask(layout: ProjectOsLayout, record: TaskRecord): Promise<void> {
   const root = join(layout.activeTasksDir, record.id);
   await ensureDir(root);
-  await writeFile(join(root, "task.yaml"), yaml.stringify(record));
-  if (!(await fileExists(join(root, "task.md")))) {
-    await writeFile(join(root, "task.md"), renderTaskMarkdown(record));
-  }
+  const markdownPath = join(root, "task.md");
+  const sidecarPath = join(root, "task.yaml");
+  const existing = (await fileExists(markdownPath))
+    ? await readMarkdownRecord<TaskFrontmatter>(markdownPath, sidecarPath)
+    : null;
+  const body =
+    existing && existing.body.trim().length > 0 ? existing.body : renderTaskMarkdown(record);
+  await writeMarkdownRecord(markdownPath, taskFrontmatter(record), body);
 }
 
 async function saveKnowledge(layout: ProjectOsLayout, record: KnowledgeRecord): Promise<void> {
   const root = join(knowledgeDirForKind(layout, record.kind), record.id);
   await ensureDir(root);
-  await writeFile(join(root, `${record.kind}.yaml`), yaml.stringify(record));
-  if (!(await fileExists(join(root, `${record.kind}.md`)))) {
-    await writeFile(join(root, `${record.kind}.md`), renderKnowledgeMarkdown(record));
-  }
+  const markdownPath = join(root, `${record.kind}.md`);
+  const sidecarPath = join(root, `${record.kind}.yaml`);
+  const existing = (await fileExists(markdownPath))
+    ? await readMarkdownRecord<KnowledgeFrontmatter>(markdownPath, sidecarPath)
+    : null;
+  const body =
+    existing && existing.body.trim().length > 0 ? existing.body : renderKnowledgeMarkdown(record);
+  await writeMarkdownRecord(markdownPath, knowledgeFrontmatter(record), body);
 }
 
 async function loadGoal(layout: ProjectOsLayout, goalId: string): Promise<GoalRecord> {
   const safeId = assertValidProjectOsId(goalId, "goalId");
-  return yaml.parse(await readFile(join(layout.goalsDir, safeId, "goal.yaml"))) as GoalRecord;
+  const markdownPath = join(layout.goalsDir, safeId, "goal.md");
+  const sidecarPath = join(layout.goalsDir, safeId, "goal.yaml");
+  const { frontmatter } = await readMarkdownRecord<GoalFrontmatter>(markdownPath, sidecarPath);
+  return frontmatter;
 }
 
 async function loadEpic(layout: ProjectOsLayout, epicId: string): Promise<EpicRecord> {
   const safeId = assertValidProjectOsId(epicId, "epicId");
-  return yaml.parse(await readFile(join(layout.epicsDir, safeId, "epic.yaml"))) as EpicRecord;
+  const markdownPath = join(layout.epicsDir, safeId, "epic.md");
+  const sidecarPath = join(layout.epicsDir, safeId, "epic.yaml");
+  const { frontmatter } = await readMarkdownRecord<EpicFrontmatter>(markdownPath, sidecarPath);
+  return frontmatter;
 }
 
 async function loadTask(layout: ProjectOsLayout, taskId: string): Promise<TaskRecord> {
   const safeId = assertValidProjectOsId(taskId, "taskId");
   const root = join(layout.activeTasksDir, safeId);
-  const record = yaml.parse(await readFile(join(root, "task.yaml"))) as TaskRecord;
   const markdownPath = join(root, "task.md");
-  if (await fileExists(markdownPath)) {
-    const parsedChecklist = parseChecklist(await readFile(markdownPath), record.checklist);
-    if (parsedChecklist.length > 0) {
-      record.checklist = parsedChecklist;
-    }
+  const sidecarPath = join(root, "task.yaml");
+  const { frontmatter, body } = await readMarkdownRecord<TaskFrontmatter>(
+    markdownPath,
+    sidecarPath,
+  );
+  const record: TaskRecord = { ...frontmatter, checklist: frontmatter.checklist ?? [] };
+  const parsedChecklist = parseChecklist(body, record.checklist);
+  if (parsedChecklist.length > 0) {
+    record.checklist = parsedChecklist;
   }
   return record;
 }
@@ -403,13 +576,18 @@ async function resolveGoalId(layout: ProjectOsLayout, goalId?: string): Promise<
   if (ids.length === 1) {
     return ids[0];
   }
-  const active = (await Promise.all(ids.map(async (id) => {
-    try {
-      return await loadGoal(layout, id);
-    } catch {
-      return null;
-    }
-  }))).filter((record): record is GoalRecord => record !== null && record.status === "active")
+  const active = (
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          return await loadGoal(layout, id);
+        } catch {
+          return null;
+        }
+      }),
+    )
+  )
+    .filter((record): record is GoalRecord => record !== null && record.status === "active")
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   if (active.length > 0) {
     return active[0].id;
@@ -428,13 +606,18 @@ async function resolveEpicId(layout: ProjectOsLayout, epicId?: string): Promise<
   if (ids.length === 1) {
     return ids[0];
   }
-  const active = (await Promise.all(ids.map(async (id) => {
-    try {
-      return await loadEpic(layout, id);
-    } catch {
-      return null;
-    }
-  }))).filter((record): record is EpicRecord => record !== null && record.status === "active")
+  const active = (
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          return await loadEpic(layout, id);
+        } catch {
+          return null;
+        }
+      }),
+    )
+  )
+    .filter((record): record is EpicRecord => record !== null && record.status === "active")
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   if (active.length > 0) {
     return active[0].id;
@@ -447,7 +630,10 @@ async function resolveTaskId(layout: ProjectOsLayout, taskId?: string): Promise<
     return assertValidProjectOsId(taskId, "taskId");
   }
   const pointers = await readPointers(layout);
-  if (pointers.currentTaskId && await directoryExists(join(layout.activeTasksDir, pointers.currentTaskId))) {
+  if (
+    pointers.currentTaskId &&
+    (await directoryExists(join(layout.activeTasksDir, pointers.currentTaskId)))
+  ) {
     return pointers.currentTaskId;
   }
   const ids = (await listDirs(layout.activeTasksDir)).sort();
@@ -458,13 +644,18 @@ async function resolveTaskId(layout: ProjectOsLayout, taskId?: string): Promise<
     await writePointers(layout, ids[0]);
     return ids[0];
   }
-  const active = (await Promise.all(ids.map(async (id) => {
-    try {
-      return await loadTask(layout, id);
-    } catch {
-      return null;
-    }
-  }))).filter((record): record is TaskRecord => record !== null && record.status === "active")
+  const active = (
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          return await loadTask(layout, id);
+        } catch {
+          return null;
+        }
+      }),
+    )
+  )
+    .filter((record): record is TaskRecord => record !== null && record.status === "active")
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   if (active.length > 0) {
     await writePointers(layout, active[0].id);
@@ -473,14 +664,30 @@ async function resolveTaskId(layout: ProjectOsLayout, taskId?: string): Promise<
   throw new Error(`Multiple tasks found. Pass a task ID: ${ids.join(", ")}`);
 }
 
-export async function createGoal(title: string, opts: { tags?: string[]; linkedKnowledgeIds?: string[] } = {}, startDir = process.cwd()) {
+export async function createGoal(
+  title: string,
+  opts: { tags?: string[]; linkedKnowledgeIds?: string[] } = {},
+  startDir = process.cwd(),
+) {
   const layout = await resolveProjectOs(startDir);
   await ensureProjectOsLayout(layout);
   const id = await nextUniqueId(layout.goalsDir, title, "goal");
   const now = new Date().toISOString();
-  const record: GoalRecord = { id, title, status: "active", tags: opts.tags, linkedKnowledgeIds: opts.linkedKnowledgeIds, createdAt: now, updatedAt: now };
+  const record: GoalRecord = {
+    id,
+    title,
+    status: "active",
+    tags: opts.tags,
+    linkedKnowledgeIds: opts.linkedKnowledgeIds,
+    createdAt: now,
+    updatedAt: now,
+  };
   await saveGoal(layout, record);
-  return { goalId: id, goalDir: relative(layout.rootDir, join(layout.goalsDir, id)), markdownPath: relative(layout.rootDir, join(layout.goalsDir, id, "goal.md")) };
+  return {
+    goalId: id,
+    goalDir: relative(layout.rootDir, join(layout.goalsDir, id)),
+    markdownPath: relative(layout.rootDir, join(layout.goalsDir, id, "goal.md")),
+  };
 }
 
 export async function planGoal(goalId?: string, startDir = process.cwd()) {
@@ -490,14 +697,22 @@ export async function planGoal(goalId?: string, startDir = process.cwd()) {
   const record = await loadGoal(layout, id);
   record.updatedAt = new Date().toISOString();
   await saveGoal(layout, record);
-  return { goalId: id, markdownPath: relative(layout.rootDir, join(layout.goalsDir, id, "goal.md")) };
+  return {
+    goalId: id,
+    markdownPath: relative(layout.rootDir, join(layout.goalsDir, id, "goal.md")),
+  };
 }
 
 export async function goalStatus(goalId?: string, startDir = process.cwd()) {
   const layout = await resolveProjectOs(startDir);
   const id = await resolveGoalId(layout, goalId);
   const record = await loadGoal(layout, id);
-  return { goalId: id, title: record.title, status: record.status, goalDir: relative(layout.rootDir, join(layout.goalsDir, id)) };
+  return {
+    goalId: id,
+    title: record.title,
+    status: record.status,
+    goalDir: relative(layout.rootDir, join(layout.goalsDir, id)),
+  };
 }
 
 export async function listGoals(startDir = process.cwd()) {
@@ -505,10 +720,12 @@ export async function listGoals(startDir = process.cwd()) {
   if (!(await directoryExists(layout.goalsDir))) {
     return { items: [] };
   }
-  const items = await Promise.all((await listDirs(layout.goalsDir)).map(async (id) => {
-    const record = await loadGoal(layout, id);
-    return { id: record.id, title: record.title, status: record.status };
-  }));
+  const items = await Promise.all(
+    (await listDirs(layout.goalsDir)).map(async (id) => {
+      const record = await loadGoal(layout, id);
+      return { id: record.id, title: record.title, status: record.status };
+    }),
+  );
   return { items };
 }
 
@@ -532,20 +749,55 @@ export async function doneGoal(goalId?: string, startDir = process.cwd()) {
   record.doneAt = now;
   record.updatedAt = now;
   await saveGoal(layout, record);
-  return { goalId: id, status: "done", warnings: activeEpics.length > 0 ? [`${activeEpics.length} linked epic(s) are still active: ${activeEpics.join(", ")}`] : undefined };
+  return {
+    goalId: id,
+    status: "done",
+    warnings:
+      activeEpics.length > 0
+        ? [`${activeEpics.length} linked epic(s) are still active: ${activeEpics.join(", ")}`]
+        : undefined,
+  };
 }
 
-export async function createEpic(title: string, opts: { goalId?: string; targetDate?: string; tags?: string[]; linkedKnowledgeIds?: string[] } = {}, startDir = process.cwd()) {
+export async function createEpic(
+  title: string,
+  opts: {
+    goalId?: string;
+    targetDate?: string;
+    tags?: string[];
+    linkedKnowledgeIds?: string[];
+  } = {},
+  startDir = process.cwd(),
+) {
   const layout = await resolveProjectOs(startDir);
   await ensureProjectOsLayout(layout);
-  if (opts.goalId && !(await fileExists(join(layout.goalsDir, assertValidProjectOsId(opts.goalId, "goalId"), "goal.yaml")))) {
+  if (
+    opts.goalId &&
+    !(await fileExists(
+      join(layout.goalsDir, assertValidProjectOsId(opts.goalId, "goalId"), "goal.md"),
+    ))
+  ) {
     throw new Error(`Unknown goal: ${opts.goalId}`);
   }
   const id = await nextUniqueId(layout.epicsDir, title, "epic");
   const now = new Date().toISOString();
-  const record: EpicRecord = { id, title, status: "active", goalId: opts.goalId, targetDate: opts.targetDate, tags: opts.tags, linkedKnowledgeIds: opts.linkedKnowledgeIds, createdAt: now, updatedAt: now };
+  const record: EpicRecord = {
+    id,
+    title,
+    status: "active",
+    goalId: opts.goalId,
+    targetDate: opts.targetDate,
+    tags: opts.tags,
+    linkedKnowledgeIds: opts.linkedKnowledgeIds,
+    createdAt: now,
+    updatedAt: now,
+  };
   await saveEpic(layout, record);
-  return { epicId: id, epicDir: relative(layout.rootDir, join(layout.epicsDir, id)), markdownPath: relative(layout.rootDir, join(layout.epicsDir, id, "epic.md")) };
+  return {
+    epicId: id,
+    epicDir: relative(layout.rootDir, join(layout.epicsDir, id)),
+    markdownPath: relative(layout.rootDir, join(layout.epicsDir, id, "epic.md")),
+  };
 }
 
 export async function planEpic(epicId?: string, startDir = process.cwd()) {
@@ -555,14 +807,24 @@ export async function planEpic(epicId?: string, startDir = process.cwd()) {
   const record = await loadEpic(layout, id);
   record.updatedAt = new Date().toISOString();
   await saveEpic(layout, record);
-  return { epicId: id, markdownPath: relative(layout.rootDir, join(layout.epicsDir, id, "epic.md")) };
+  return {
+    epicId: id,
+    markdownPath: relative(layout.rootDir, join(layout.epicsDir, id, "epic.md")),
+  };
 }
 
 export async function epicStatus(epicId?: string, startDir = process.cwd()) {
   const layout = await resolveProjectOs(startDir);
   const id = await resolveEpicId(layout, epicId);
   const record = await loadEpic(layout, id);
-  return { epicId: id, title: record.title, status: record.status, goalId: record.goalId, targetDate: record.targetDate, epicDir: relative(layout.rootDir, join(layout.epicsDir, id)) };
+  return {
+    epicId: id,
+    title: record.title,
+    status: record.status,
+    goalId: record.goalId,
+    targetDate: record.targetDate,
+    epicDir: relative(layout.rootDir, join(layout.epicsDir, id)),
+  };
 }
 
 export async function listEpics(startDir = process.cwd()) {
@@ -570,10 +832,12 @@ export async function listEpics(startDir = process.cwd()) {
   if (!(await directoryExists(layout.epicsDir))) {
     return { items: [] };
   }
-  const items = await Promise.all((await listDirs(layout.epicsDir)).map(async (id) => {
-    const record = await loadEpic(layout, id);
-    return { id: record.id, title: record.title, status: record.status, goalId: record.goalId };
-  }));
+  const items = await Promise.all(
+    (await listDirs(layout.epicsDir)).map(async (id) => {
+      const record = await loadEpic(layout, id);
+      return { id: record.id, title: record.title, status: record.status, goalId: record.goalId };
+    }),
+  );
   return { items };
 }
 
@@ -597,10 +861,21 @@ export async function doneEpic(epicId?: string, startDir = process.cwd()) {
   record.doneAt = now;
   record.updatedAt = now;
   await saveEpic(layout, record);
-  return { epicId: id, status: "done", warnings: activeTasks.length > 0 ? [`${activeTasks.length} linked task(s) are still active: ${activeTasks.join(", ")}`] : undefined };
+  return {
+    epicId: id,
+    status: "done",
+    warnings:
+      activeTasks.length > 0
+        ? [`${activeTasks.length} linked task(s) are still active: ${activeTasks.join(", ")}`]
+        : undefined,
+  };
 }
 
-export async function createTask(title: string, opts: { goalId?: string; epicId?: string; tags?: string[]; linkedKnowledgeIds?: string[] } = {}, startDir = process.cwd()) {
+export async function createTask(
+  title: string,
+  opts: { goalId?: string; epicId?: string; tags?: string[]; linkedKnowledgeIds?: string[] } = {},
+  startDir = process.cwd(),
+) {
   const layout = await resolveProjectOs(startDir);
   await ensureProjectOsLayout(layout);
   let goalId = opts.goalId;
@@ -608,15 +883,33 @@ export async function createTask(title: string, opts: { goalId?: string; epicId?
     const epic = await loadEpic(layout, opts.epicId);
     goalId = goalId ?? epic.goalId;
   }
-  if (goalId && !(await fileExists(join(layout.goalsDir, assertValidProjectOsId(goalId, "goalId"), "goal.yaml")))) {
+  if (
+    goalId &&
+    !(await fileExists(join(layout.goalsDir, assertValidProjectOsId(goalId, "goalId"), "goal.md")))
+  ) {
     throw new Error(`Unknown goal: ${goalId}`);
   }
   const id = await nextUniqueId(layout.activeTasksDir, title, "task");
   const now = new Date().toISOString();
-  const record: TaskRecord = { id, title, status: "active", goalId, epicId: opts.epicId, tags: opts.tags, linkedKnowledgeIds: opts.linkedKnowledgeIds, createdAt: now, updatedAt: now, checklist: defaultChecklist() };
+  const record: TaskRecord = {
+    id,
+    title,
+    status: "active",
+    goalId,
+    epicId: opts.epicId,
+    tags: opts.tags,
+    linkedKnowledgeIds: opts.linkedKnowledgeIds,
+    createdAt: now,
+    updatedAt: now,
+    checklist: defaultChecklist(),
+  };
   await saveTask(layout, record);
   await writePointers(layout, id);
-  return { taskId: id, taskDir: relative(layout.rootDir, join(layout.activeTasksDir, id)), markdownPath: relative(layout.rootDir, join(layout.activeTasksDir, id, "task.md")) };
+  return {
+    taskId: id,
+    taskDir: relative(layout.rootDir, join(layout.activeTasksDir, id)),
+    markdownPath: relative(layout.rootDir, join(layout.activeTasksDir, id, "task.md")),
+  };
 }
 
 export async function planTask(taskId?: string, startDir = process.cwd()) {
@@ -627,7 +920,10 @@ export async function planTask(taskId?: string, startDir = process.cwd()) {
   record.updatedAt = new Date().toISOString();
   await saveTask(layout, record);
   await writePointers(layout, id);
-  return { taskId: id, markdownPath: relative(layout.rootDir, join(layout.activeTasksDir, id, "task.md")) };
+  return {
+    taskId: id,
+    markdownPath: relative(layout.rootDir, join(layout.activeTasksDir, id, "task.md")),
+  };
 }
 
 export async function nextTask(taskId?: string, startDir = process.cwd()) {
@@ -636,7 +932,12 @@ export async function nextTask(taskId?: string, startDir = process.cwd()) {
   const record = await loadTask(layout, id);
   const nextItem = record.checklist.find((item) => !item.done);
   await writePointers(layout, id);
-  return { taskId: id, checklistItemId: nextItem?.id ?? null, nextTask: nextItem?.title ?? null, remaining: record.checklist.filter((item) => !item.done).length };
+  return {
+    taskId: id,
+    checklistItemId: nextItem?.id ?? null,
+    nextTask: nextItem?.title ?? null,
+    remaining: record.checklist.filter((item) => !item.done).length,
+  };
 }
 
 export async function taskStatus(taskId?: string, startDir = process.cwd()) {
@@ -644,10 +945,27 @@ export async function taskStatus(taskId?: string, startDir = process.cwd()) {
   const id = await resolveTaskId(layout, taskId);
   const record = await loadTask(layout, id);
   const complete = record.checklist.filter((item) => item.done).length;
-  return { taskId: id, title: record.title, status: record.status, goalId: record.goalId, epicId: record.epicId, progress: { total: record.checklist.length, complete, remaining: record.checklist.length - complete }, nextTask: record.checklist.find((item) => !item.done)?.title ?? null, taskDir: relative(layout.rootDir, join(layout.activeTasksDir, id)) };
+  return {
+    taskId: id,
+    title: record.title,
+    status: record.status,
+    goalId: record.goalId,
+    epicId: record.epicId,
+    progress: {
+      total: record.checklist.length,
+      complete,
+      remaining: record.checklist.length - complete,
+    },
+    nextTask: record.checklist.find((item) => !item.done)?.title ?? null,
+    taskDir: relative(layout.rootDir, join(layout.activeTasksDir, id)),
+  };
 }
 
-export async function completeTaskChecklistItem(checklistItemId: string, taskId?: string, startDir = process.cwd()) {
+export async function completeTaskChecklistItem(
+  checklistItemId: string,
+  taskId?: string,
+  startDir = process.cwd(),
+) {
   const layout = await resolveProjectOs(startDir);
   const id = await resolveTaskId(layout, taskId);
   const record = await loadTask(layout, id);
@@ -666,15 +984,28 @@ export async function completeTaskChecklistItem(checklistItemId: string, taskId?
   await saveTask(layout, record);
   await syncTaskMarkdown(layout, id, item);
   await appendTaskJournal(layout, id, `Completed checklist item: ${item.title}`);
-  return { taskId: id, completedItem: item.title, remaining: record.checklist.filter((entry) => !entry.done).length };
+  return {
+    taskId: id,
+    completedItem: item.title,
+    remaining: record.checklist.filter((entry) => !entry.done).length,
+  };
 }
 
-async function syncTaskMarkdown(layout: ProjectOsLayout, taskId: string, completedItem: ChecklistItem): Promise<void> {
+async function syncTaskMarkdown(
+  layout: ProjectOsLayout,
+  taskId: string,
+  completedItem: ChecklistItem,
+): Promise<void> {
   const markdownPath = join(layout.activeTasksDir, taskId, "task.md");
   if (!(await fileExists(markdownPath))) {
     return;
   }
-  const lines = (await readFile(markdownPath)).split("\n");
+  const sidecarPath = join(layout.activeTasksDir, taskId, "task.yaml");
+  const { frontmatter, body } = await readMarkdownRecord<TaskFrontmatter>(
+    markdownPath,
+    sidecarPath,
+  );
+  const lines = body.split("\n");
   let updated = false;
   const nextLines = lines.map((line) => {
     if (updated) {
@@ -692,21 +1023,33 @@ async function syncTaskMarkdown(layout: ProjectOsLayout, taskId: string, complet
     return `- [x] ${title}`;
   });
   if (updated) {
-    await writeFile(markdownPath, nextLines.join("\n"));
+    await writeMarkdownRecord(markdownPath, frontmatter, nextLines.join("\n"));
   }
 }
 
-async function appendTaskJournal(layout: ProjectOsLayout, taskId: string, entry: string): Promise<void> {
+async function appendTaskJournal(
+  layout: ProjectOsLayout,
+  taskId: string,
+  entry: string,
+): Promise<void> {
   const markdownPath = join(layout.activeTasksDir, taskId, "task.md");
   if (!(await fileExists(markdownPath))) {
     return;
   }
-  const current = await readFile(markdownPath);
+  const sidecarPath = join(layout.activeTasksDir, taskId, "task.yaml");
+  const { frontmatter, body } = await readMarkdownRecord<TaskFrontmatter>(
+    markdownPath,
+    sidecarPath,
+  );
   const line = `- ${new Date().toISOString()}: ${entry}`;
-  if (current.includes("\n## Journal\n")) {
-    await writeFile(markdownPath, current.trimEnd() + "\n" + line + "\n");
+  if (body.includes("\n## Journal\n")) {
+    await writeMarkdownRecord(markdownPath, frontmatter, body.trimEnd() + "\n" + line + "\n");
   } else {
-    await writeFile(markdownPath, current.trimEnd() + "\n\n## Journal\n\n" + line + "\n");
+    await writeMarkdownRecord(
+      markdownPath,
+      frontmatter,
+      body.trimEnd() + "\n\n## Journal\n\n" + line + "\n",
+    );
   }
 }
 
@@ -714,18 +1057,45 @@ export async function listTasks(opts: { archived?: boolean } = {}, startDir = pr
   const layout = await resolveProjectOs(startDir);
   const baseDir = opts.archived ? layout.archivedTasksDir : layout.activeTasksDir;
   if (!(await directoryExists(baseDir))) {
-    return { currentTaskId: opts.archived ? undefined : (await readPointers(layout)).currentTaskId, tasks: [] };
+    return {
+      currentTaskId: opts.archived ? undefined : (await readPointers(layout)).currentTaskId,
+      tasks: [],
+    };
   }
-  const tasks = await Promise.all((await listDirs(baseDir)).map(async (dirName) => {
-    try {
-      const yamlPath = join(baseDir, dirName, "task.yaml");
-      const record = yaml.parse(await readFile(yamlPath)) as TaskRecord;
-      const complete = (record.checklist ?? []).filter((item) => item.done).length;
-      return { id: record.id, title: record.title, status: record.status, goalId: record.goalId, epicId: record.epicId, taskDir: relative(layout.rootDir, join(baseDir, dirName)), progress: { total: (record.checklist ?? []).length, complete, remaining: (record.checklist ?? []).length - complete } };
-    } catch {
-      return { id: dirName, title: "(unreadable)", status: "archived" as const, taskDir: relative(layout.rootDir, join(baseDir, dirName)), progress: { total: 0, complete: 0, remaining: 0 } };
-    }
-  }));
+  const tasks = await Promise.all(
+    (await listDirs(baseDir)).map(async (dirName) => {
+      try {
+        const markdownPath = join(baseDir, dirName, "task.md");
+        const sidecarPath = join(baseDir, dirName, "task.yaml");
+        const { frontmatter } = await readMarkdownRecord<TaskFrontmatter>(
+          markdownPath,
+          sidecarPath,
+        );
+        const complete = (frontmatter.checklist ?? []).filter((item) => item.done).length;
+        return {
+          id: frontmatter.id,
+          title: frontmatter.title,
+          status: frontmatter.status,
+          goalId: frontmatter.goalId,
+          epicId: frontmatter.epicId,
+          taskDir: relative(layout.rootDir, join(baseDir, dirName)),
+          progress: {
+            total: (frontmatter.checklist ?? []).length,
+            complete,
+            remaining: (frontmatter.checklist ?? []).length - complete,
+          },
+        };
+      } catch {
+        return {
+          id: dirName,
+          title: "(unreadable)",
+          status: "archived",
+          taskDir: relative(layout.rootDir, join(baseDir, dirName)),
+          progress: { total: 0, complete: 0, remaining: 0 },
+        };
+      }
+    }),
+  );
   const pointers = await readPointers(layout);
   return opts.archived ? { tasks } : { currentTaskId: pointers.currentTaskId, tasks };
 }
@@ -756,13 +1126,19 @@ export async function archiveTask(taskId?: string, startDir = process.cwd()) {
   record.doneAt = now;
   record.updatedAt = now;
   await saveTask(layout, record);
-  await appendTaskJournal(layout, id, incompleteItems.length > 0 ? `Archived with ${incompleteItems.length} incomplete checklist item(s): ${incompleteItems.join(", ")}` : "Archived task");
+  await appendTaskJournal(
+    layout,
+    id,
+    incompleteItems.length > 0
+      ? `Archived with ${incompleteItems.length} incomplete checklist item(s): ${incompleteItems.join(", ")}`
+      : "Archived task",
+  );
   const source = join(layout.activeTasksDir, id);
   const target = await resolveArchiveTarget(layout, id);
   try {
     await rename(source, target);
   } catch (err: unknown) {
-    if ((err as NodeJS.ErrnoException).code === "EXDEV") {
+    if (isNodeErrnoException(err) && err.code === "EXDEV") {
       await cp(source, target, { recursive: true });
       await removeDir(source);
     } else {
@@ -774,7 +1150,17 @@ export async function archiveTask(taskId?: string, startDir = process.cwd()) {
   if (pointers.currentTaskId === id || pointers.currentTaskId === null) {
     await writePointers(layout, remaining[0] ?? null);
   }
-  return { taskId: id, archivedTo: relative(layout.rootDir, target), nextTaskId: remaining[0] ?? null, warnings: incompleteItems.length > 0 ? [`${incompleteItems.length} incomplete checklist item(s) were archived: ${incompleteItems.join(", ")}`] : undefined };
+  return {
+    taskId: id,
+    archivedTo: relative(layout.rootDir, target),
+    nextTaskId: remaining[0] ?? null,
+    warnings:
+      incompleteItems.length > 0
+        ? [
+            `${incompleteItems.length} incomplete checklist item(s) were archived: ${incompleteItems.join(", ")}`,
+          ]
+        : undefined,
+  };
 }
 
 export async function restoreTask(taskId: string, startDir = process.cwd()) {
@@ -784,8 +1170,10 @@ export async function restoreTask(taskId: string, startDir = process.cwd()) {
   let foundDir: string | null = null;
   for (const dirName of await listDirs(layout.archivedTasksDir)) {
     try {
-      const record = yaml.parse(await readFile(join(layout.archivedTasksDir, dirName, "task.yaml"))) as TaskRecord;
-      if (record.id === safeId) {
+      const markdownPath = join(layout.archivedTasksDir, dirName, "task.md");
+      const sidecarPath = join(layout.archivedTasksDir, dirName, "task.yaml");
+      const { frontmatter } = await readMarkdownRecord<TaskFrontmatter>(markdownPath, sidecarPath);
+      if (frontmatter.id === safeId) {
         foundDir = dirName;
         break;
       }
@@ -804,18 +1192,26 @@ export async function restoreTask(taskId: string, startDir = process.cwd()) {
   try {
     await rename(source, dest);
   } catch (err: unknown) {
-    if ((err as NodeJS.ErrnoException).code === "EXDEV") {
+    if (isNodeErrnoException(err) && err.code === "EXDEV") {
       await cp(source, dest, { recursive: true });
       await removeDir(source);
     } else {
       throw err;
     }
   }
-  const record = yaml.parse(await readFile(join(dest, "task.yaml"))) as TaskRecord;
-  record.status = "active";
-  delete record.doneAt;
-  record.updatedAt = new Date().toISOString();
-  await writeFile(join(dest, "task.yaml"), yaml.stringify(record));
+  const markdownPath = join(dest, "task.md");
+  const sidecarPath = join(dest, "task.yaml");
+  const { frontmatter, body } = await readMarkdownRecord<TaskFrontmatter>(
+    markdownPath,
+    sidecarPath,
+  );
+  const restoredFrontmatter: TaskFrontmatter = {
+    ...frontmatter,
+    status: "active",
+    updatedAt: new Date().toISOString(),
+  };
+  delete restoredFrontmatter.doneAt;
+  await writeMarkdownRecord(markdownPath, restoredFrontmatter, body);
   await appendTaskJournal(layout, safeId, "Restored from archive");
   await writePointers(layout, safeId);
   return { taskId: safeId, restoredTo: relative(layout.rootDir, dest) };
@@ -832,26 +1228,59 @@ function knowledgeDirForKind(layout: ProjectOsLayout, kind: KnowledgeKind): stri
   }
 }
 
-export async function createKnowledge(kind: KnowledgeKind, title: string, opts: { tags?: string[]; linkedWorkIds?: string[] } = {}, startDir = process.cwd()) {
+export async function createKnowledge(
+  kind: KnowledgeKind,
+  title: string,
+  opts: { tags?: string[]; linkedWorkIds?: string[] } = {},
+  startDir = process.cwd(),
+) {
   const layout = await resolveProjectOs(startDir);
   await ensureProjectOsLayout(layout);
   const parentDir = knowledgeDirForKind(layout, kind);
   const id = await nextUniqueId(parentDir, title, kind);
   const now = new Date().toISOString();
-  const record: KnowledgeRecord = { id, title, kind, status: "active", tags: opts.tags, linkedWorkIds: opts.linkedWorkIds, createdAt: now, updatedAt: now };
+  const record: KnowledgeRecord = {
+    id,
+    title,
+    kind,
+    status: "active",
+    tags: opts.tags,
+    linkedWorkIds: opts.linkedWorkIds,
+    createdAt: now,
+    updatedAt: now,
+  };
   await saveKnowledge(layout, record);
-  return { [`${kind}Id`]: id, knowledgeId: id, markdownPath: relative(layout.rootDir, join(parentDir, id, `${kind}.md`)), knowledgeDir: relative(layout.rootDir, join(parentDir, id)) };
+  return {
+    [`${kind}Id`]: id,
+    knowledgeId: id,
+    markdownPath: relative(layout.rootDir, join(parentDir, id, `${kind}.md`)),
+    knowledgeDir: relative(layout.rootDir, join(parentDir, id)),
+  };
 }
 
-async function loadKnowledge(layout: ProjectOsLayout, kind: KnowledgeKind, id: string): Promise<KnowledgeRecord> {
+async function loadKnowledge(
+  layout: ProjectOsLayout,
+  kind: KnowledgeKind,
+  id: string,
+): Promise<KnowledgeRecord> {
   const safeId = assertValidProjectOsId(id, `${kind}Id`);
-  return yaml.parse(await readFile(join(knowledgeDirForKind(layout, kind), safeId, `${kind}.yaml`))) as KnowledgeRecord;
+  const markdownPath = join(knowledgeDirForKind(layout, kind), safeId, `${kind}.md`);
+  const sidecarPath = join(knowledgeDirForKind(layout, kind), safeId, `${kind}.yaml`);
+  const { frontmatter } = await readMarkdownRecord<KnowledgeFrontmatter>(markdownPath, sidecarPath);
+  return frontmatter;
 }
 
 export async function knowledgeStatus(kind: KnowledgeKind, id: string, startDir = process.cwd()) {
   const layout = await resolveProjectOs(startDir);
   const record = await loadKnowledge(layout, kind, id);
-  return { knowledgeId: record.id, [`${kind}Id`]: record.id, title: record.title, kind: record.kind, status: record.status, knowledgeDir: relative(layout.rootDir, join(knowledgeDirForKind(layout, kind), record.id)) };
+  return {
+    knowledgeId: record.id,
+    [`${kind}Id`]: record.id,
+    title: record.title,
+    kind: record.kind,
+    status: record.status,
+    knowledgeDir: relative(layout.rootDir, join(knowledgeDirForKind(layout, kind), record.id)),
+  };
 }
 
 export async function listKnowledge(kind: KnowledgeKind, startDir = process.cwd()) {
@@ -860,9 +1289,11 @@ export async function listKnowledge(kind: KnowledgeKind, startDir = process.cwd(
   if (!(await directoryExists(parentDir))) {
     return { items: [] };
   }
-  const items = await Promise.all((await listDirs(parentDir)).map(async (id) => {
-    const record = await loadKnowledge(layout, kind, id);
-    return { id: record.id, title: record.title, kind: record.kind, status: record.status };
-  }));
+  const items = await Promise.all(
+    (await listDirs(parentDir)).map(async (id) => {
+      const record = await loadKnowledge(layout, kind, id);
+      return { id: record.id, title: record.title, kind: record.kind, status: record.status };
+    }),
+  );
   return { items };
 }

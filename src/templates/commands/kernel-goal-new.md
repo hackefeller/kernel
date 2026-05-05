@@ -10,5 +10,5 @@ argumentHint: title
 
 Create a goal for a strategic outcome or durable product/technical direction.
 
-This creates `.kernel/work/goals/<goal-id>/goal.md` and `goal.yaml`.
+This creates `.kernel/work/goals/<goal-id>/goal.md` with frontmatter.
 Use `--knowledge <ids>` to link existing knowledge records.

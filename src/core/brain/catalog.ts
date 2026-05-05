@@ -39,23 +39,32 @@ function readStringArray(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === "string" && item.length > 0);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readYamlRecord(value: unknown): Record<string, unknown> | null {
+  return isRecord(value) ? value : null;
+}
+
 function readCommandYaml(filePath: string, content: string): BuiltInCatalog["commands"][number] {
-  const parsed = yaml.parse(content) as Record<string, unknown> | null;
-  const name = readString(parsed?.name);
-  const description = readString(parsed?.description);
+  const parsed = yaml.parse(content);
+  const record = isRecord(parsed) ? parsed : undefined;
+  const name = readString(record?.name);
+  const description = readString(record?.description);
   if (!name || !description) {
     throw new Error(`Invalid command template: missing name or description in ${filePath}`);
   }
 
-  const group = readString(parsed?.group);
+  const group = readString(record?.group);
 
   return {
     name,
     kind: "command",
     description,
-    instructions: readString(parsed?.instructions) ?? "",
-    argumentsHint: readString(parsed?.argumentsHint) ?? readString(parsed?.argumentHint),
-    target: readString(parsed?.target),
+    instructions: readString(record?.instructions) ?? "",
+    argumentsHint: readString(record?.argumentsHint) ?? readString(record?.argumentHint),
+    target: readString(record?.target),
     group:
       group === "system" ||
       group === "workflow" ||
@@ -63,9 +72,9 @@ function readCommandYaml(filePath: string, content: string): BuiltInCatalog["com
       group === "development"
         ? group
         : undefined,
-    allowedTools: readStringArray(parsed?.allowedTools),
-    backedBySkill: readString(parsed?.backedBySkill),
-    nativeOnly: parsed?.nativeOnly === true,
+    allowedTools: readStringArray(record?.allowedTools),
+    backedBySkill: readString(record?.backedBySkill),
+    nativeOnly: record?.nativeOnly === true,
   };
 }
 
@@ -139,7 +148,7 @@ async function loadBrainPackages(brainRoot: string): Promise<BrainPackageDefinit
     }
 
     const filePath = path.join(packagesRoot, entry.name);
-    const parsed = yaml.parse(await fs.readFile(filePath, "utf-8")) as Record<string, unknown> | null;
+    const parsed = readYamlRecord(yaml.parse(await fs.readFile(filePath, "utf-8")));
     const id = readString(parsed?.id) ?? entry.name.replace(/\.yaml$/, "");
     packages.push({
       id,

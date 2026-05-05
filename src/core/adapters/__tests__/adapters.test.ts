@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { AGENT_NAMES, COMMAND_NAMES, SKILL_NAMES } from "../../../templates/constants.js";
-import type { AgentTemplate } from "../../templates/types.js";
+import type { AgentTemplate, SkillTemplate } from "../../templates/types.js";
 import {
   claudeAdapter,
   codexAdapter,
@@ -16,8 +16,10 @@ const allAdapters: ToolCommandAdapter[] = [
   piAdapter,
 ];
 
-const testSkillTemplate = {
+const testSkillTemplate: SkillTemplate = {
   name: "planner",
+  kind: "skill",
+  tags: ["workflow", "planning"],
   description: "Planning agent",
   instructions: "You are a planner agent.",
   license: "MIT",
@@ -86,7 +88,7 @@ describe("Pi Adapter", () => {
   });
 
   it("formats skill with frontmatter", () => {
-    const result = piAdapter.formatSkill(testSkillTemplate as any, "1.0.0");
+    const result = piAdapter.formatSkill(testSkillTemplate, "1.0.0");
     expect(result).toContain("---");
     expect(result).toContain("name: planner");
     expect(result).toContain("description: Planning agent");
@@ -308,13 +310,13 @@ describe("Codex formatSkill", () => {
   });
 
   it("includes name and description in frontmatter", () => {
-    const result = codexAdapter.formatSkill(testSkillTemplate as any, "1.0.0");
+    const result = codexAdapter.formatSkill(testSkillTemplate, "1.0.0");
     expect(result).toContain("name: planner");
     expect(result).toContain("description: Planning agent");
   });
 
   it("includes generatedBy version", () => {
-    const result = codexAdapter.formatSkill(testSkillTemplate as any, "1.0.0");
+    const result = codexAdapter.formatSkill(testSkillTemplate, "1.0.0");
     expect(result).toContain('generatedBy: "1.0.0"');
   });
 });
@@ -330,7 +332,7 @@ describe("Codex formatSkill", () => {
 describe("formatSkill — userInvocable field", () => {
   it("emits user-invocable: false when userInvocable is false", () => {
     const result = claudeAdapter.formatSkill(
-      { ...testSkillTemplate, userInvocable: false } as any,
+      { ...testSkillTemplate, userInvocable: false },
       "1.0.0",
     );
     expect(result).toContain("user-invocable: false");
@@ -338,14 +340,14 @@ describe("formatSkill — userInvocable field", () => {
 
   it("does not emit user-invocable when userInvocable is true", () => {
     const result = claudeAdapter.formatSkill(
-      { ...testSkillTemplate, userInvocable: true } as any,
+      { ...testSkillTemplate, userInvocable: true },
       "1.0.0",
     );
     expect(result).not.toContain("user-invocable");
   });
 
   it("does not emit user-invocable when userInvocable is undefined", () => {
-    const result = claudeAdapter.formatSkill(testSkillTemplate as any, "1.0.0");
+    const result = claudeAdapter.formatSkill(testSkillTemplate, "1.0.0");
     expect(result).not.toContain("user-invocable");
   });
 });
@@ -353,14 +355,14 @@ describe("formatSkill — userInvocable field", () => {
 describe("formatSkill — argumentHint field", () => {
   it("emits argument-hint when argumentHint is set", () => {
     const result = claudeAdapter.formatSkill(
-      { ...testSkillTemplate, argumentHint: "issue URL or description" } as any,
+      { ...testSkillTemplate, argumentHint: "issue URL or description" },
       "1.0.0",
     );
     expect(result).toContain("argument-hint: issue URL or description");
   });
 
   it("does not emit argument-hint when argumentHint is absent", () => {
-    const result = claudeAdapter.formatSkill(testSkillTemplate as any, "1.0.0");
+    const result = claudeAdapter.formatSkill(testSkillTemplate, "1.0.0");
     expect(result).not.toContain("argument-hint");
   });
 });
@@ -368,7 +370,7 @@ describe("formatSkill — argumentHint field", () => {
 describe("formatSkill — allowedTools field", () => {
   it("emits allowed-tools as comma-separated list", () => {
     const result = claudeAdapter.formatSkill(
-      { ...testSkillTemplate, allowedTools: ["Read", "Grep", "Glob"] } as any,
+      { ...testSkillTemplate, allowedTools: ["Read", "Grep", "Glob"] },
       "1.0.0",
     );
     expect(result).toContain("allowed-tools: Read, Grep, Glob");
@@ -376,14 +378,14 @@ describe("formatSkill — allowedTools field", () => {
 
   it("does not emit allowed-tools when allowedTools is empty array", () => {
     const result = claudeAdapter.formatSkill(
-      { ...testSkillTemplate, allowedTools: [] } as any,
+      { ...testSkillTemplate, allowedTools: [] },
       "1.0.0",
     );
     expect(result).not.toContain("allowed-tools");
   });
 
   it("does not emit allowed-tools when allowedTools is undefined", () => {
-    const result = claudeAdapter.formatSkill(testSkillTemplate as any, "1.0.0");
+    const result = claudeAdapter.formatSkill(testSkillTemplate, "1.0.0");
     expect(result).not.toContain("allowed-tools");
   });
 });
@@ -391,7 +393,7 @@ describe("formatSkill — allowedTools field", () => {
 describe("formatSkill — field ordering", () => {
   it("emits disable-model-invocation before user-invocable", () => {
     const result = claudeAdapter.formatSkill(
-      { ...testSkillTemplate, disableModelInvocation: true, userInvocable: false } as any,
+      { ...testSkillTemplate, disableModelInvocation: true, userInvocable: false },
       "1.0.0",
     );
     const dmiPos = result.indexOf("disable-model-invocation");
@@ -509,7 +511,7 @@ describe("GitHub Copilot formatAgent", () => {
 describe("GitHub Copilot formatSkill — behavioral fields", () => {
   it("emits disable-model-invocation when set", () => {
     const result = githubCopilotAdapter.formatSkill(
-      { ...testSkillTemplate, disableModelInvocation: true } as any,
+      { ...testSkillTemplate, disableModelInvocation: true },
       "1.0.0",
     );
     expect(result).toContain("disable-model-invocation: true");
@@ -517,7 +519,7 @@ describe("GitHub Copilot formatSkill — behavioral fields", () => {
 
   it("emits user-invocable: false when set", () => {
     const result = githubCopilotAdapter.formatSkill(
-      { ...testSkillTemplate, userInvocable: false } as any,
+      { ...testSkillTemplate, userInvocable: false },
       "1.0.0",
     );
     expect(result).toContain("user-invocable: false");
@@ -525,7 +527,7 @@ describe("GitHub Copilot formatSkill — behavioral fields", () => {
 
   it("emits argument-hint when set", () => {
     const result = githubCopilotAdapter.formatSkill(
-      { ...testSkillTemplate, argumentHint: "issue URL" } as any,
+      { ...testSkillTemplate, argumentHint: "issue URL" },
       "1.0.0",
     );
     expect(result).toContain("argument-hint: issue URL");
@@ -533,7 +535,7 @@ describe("GitHub Copilot formatSkill — behavioral fields", () => {
 
   it("emits allowed-tools when set", () => {
     const result = githubCopilotAdapter.formatSkill(
-      { ...testSkillTemplate, allowedTools: ["Read", "Grep"] } as any,
+      { ...testSkillTemplate, allowedTools: ["Read", "Grep"] },
       "1.0.0",
     );
     expect(result).toContain("allowed-tools: Read, Grep");
@@ -546,7 +548,7 @@ describe("GitHub Copilot manifest", () => {
   });
 
   it("generates manifest content", () => {
-    const result = githubCopilotAdapter.formatManifest!([testSkillTemplate as any], "1.0.0");
+    const result = githubCopilotAdapter.formatManifest!([testSkillTemplate], "1.0.0");
     expect(result).toContain("# Skills Index");
     expect(result).toContain("## planner");
     expect(result).toContain("**Description**: Planning agent");

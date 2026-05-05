@@ -71,6 +71,10 @@ function readString(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
+function readErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function readStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) {
     return undefined;
@@ -79,11 +83,27 @@ function readStringArray(value: unknown): string[] | undefined {
   return items.length > 0 ? items : undefined;
 }
 
-function readRecord(value: unknown): Record<string, unknown> | undefined {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readMetadata(value: unknown): SkillTemplate["metadata"] | undefined {
+  if (!isRecord(value)) {
     return undefined;
   }
-  return value as Record<string, unknown>;
+  const metadata = {
+    author: readString(value.author),
+    version: readString(value.version),
+    category: readString(value.category),
+    tags: readStringArray(value.tags),
+  };
+  return metadata.author || metadata.version || metadata.category || metadata.tags ? metadata : undefined;
+}
+
+const VALID_TAG_SET = new Set<string>(VALID_TAGS);
+
+function isTemplateTag(value: string): value is TemplateTag {
+  return VALID_TAG_SET.has(value);
 }
 
 function parseOptionalEnum<T>(
@@ -122,8 +142,8 @@ function validateTags(tags: unknown, filePath: string): TemplateTag[] | undefine
     if (typeof tag !== "string") {
       continue;
     }
-    if (VALID_TAGS.includes(tag as TemplateTag)) {
-      validTags.push(tag as TemplateTag);
+    if (isTemplateTag(tag)) {
+      validTags.push(tag);
     } else {
       console.warn(`Unknown tag '${tag}' in ${filePath}. Valid tags: ${VALID_TAGS.join(", ")}`);
     }
@@ -132,7 +152,7 @@ function validateTags(tags: unknown, filePath: string): TemplateTag[] | undefine
 }
 
 export function parseSkillTemplate(filePath: string, content: string): SkillTemplate {
-  const { frontmatter, body } = parseFrontmatter<Record<string, unknown>>(content);
+  const { frontmatter, body } = parseFrontmatter(content);
   const name = readString(frontmatter.name);
   const description = readString(frontmatter.description);
   if (!name || !description) {
@@ -147,7 +167,7 @@ export function parseSkillTemplate(filePath: string, content: string): SkillTemp
     instructions: body,
     license: readString(frontmatter.license),
     compatibility: readString(frontmatter.compatibility),
-    metadata: readRecord(frontmatter.metadata) as SkillTemplate["metadata"] | undefined,
+    metadata: readMetadata(frontmatter.metadata),
     when: readStringArray(frontmatter.when),
     applicability: readStringArray(frontmatter.applicability),
     termination: readStringArray(frontmatter.termination),
@@ -167,7 +187,7 @@ export function parseSkillTemplate(filePath: string, content: string): SkillTemp
 }
 
 export function parseAgentTemplate(filePath: string, content: string): AgentTemplate {
-  const { frontmatter, body } = parseFrontmatter<Record<string, unknown>>(content);
+  const { frontmatter, body } = parseFrontmatter(content);
   const name = readString(frontmatter.name);
   const description = readString(frontmatter.description);
   if (!name || !description) {
@@ -182,7 +202,7 @@ export function parseAgentTemplate(filePath: string, content: string): AgentTemp
     instructions: body,
     license: readString(frontmatter.license),
     compatibility: readString(frontmatter.compatibility),
-    metadata: readRecord(frontmatter.metadata) as AgentTemplate["metadata"] | undefined,
+    metadata: readMetadata(frontmatter.metadata),
     when: readStringArray(frontmatter.when),
     applicability: readStringArray(frontmatter.applicability),
     termination: readStringArray(frontmatter.termination),
@@ -222,7 +242,7 @@ export function parseAgentTemplate(filePath: string, content: string): AgentTemp
 }
 
 export function parseCommandTemplate(filePath: string, content: string): CommandTemplate {
-  const { frontmatter, body } = parseFrontmatter<Record<string, unknown>>(content);
+  const { frontmatter, body } = parseFrontmatter(content);
   const name = readString(frontmatter.name);
   const description = readString(frontmatter.description);
   if (!name || !description) {
@@ -312,7 +332,7 @@ function loadFromFilesystem(): TemplateRegistry {
             template.name = entry.name;
             skills.push(template);
           } catch (err) {
-            console.warn(`[registry] Skipping invalid skill template at ${filePath}: ${(err as Error).message}`);
+            console.warn(`[registry] Skipping invalid skill template at ${filePath}: ${readErrorMessage(err)}`);
           }
         }
       }
@@ -331,7 +351,7 @@ function loadFromFilesystem(): TemplateRegistry {
             template.name = entry.name;
             agents.push(template);
           } catch (err) {
-            console.warn(`[registry] Skipping invalid agent template at ${filePath}: ${(err as Error).message}`);
+            console.warn(`[registry] Skipping invalid agent template at ${filePath}: ${readErrorMessage(err)}`);
           }
         }
       }
@@ -349,7 +369,7 @@ function loadFromFilesystem(): TemplateRegistry {
           template.name = entry.name.replace(".md", "");
           commands.push(template);
         } catch (err) {
-          console.warn(`[registry] Skipping invalid command template at ${filePath}: ${(err as Error).message}`);
+          console.warn(`[registry] Skipping invalid command template at ${filePath}: ${readErrorMessage(err)}`);
         }
       }
     }
@@ -389,7 +409,7 @@ function loadBundled(): TemplateRegistry {
       template.name = dirName;
       skills.push(template);
     } catch (err) {
-      console.warn(`[registry] Skipping invalid skill template at ${filePath}: ${(err as Error).message}`);
+      console.warn(`[registry] Skipping invalid skill template at ${filePath}: ${readErrorMessage(err)}`);
     }
   }
 
@@ -401,7 +421,7 @@ function loadBundled(): TemplateRegistry {
       template.name = dirName;
       agents.push(template);
     } catch (err) {
-      console.warn(`[registry] Skipping invalid agent template at ${filePath}: ${(err as Error).message}`);
+      console.warn(`[registry] Skipping invalid agent template at ${filePath}: ${readErrorMessage(err)}`);
     }
   }
 
@@ -413,7 +433,7 @@ function loadBundled(): TemplateRegistry {
       template.name = fileName;
       commands.push(template);
     } catch (err) {
-      console.warn(`[registry] Skipping invalid command template at ${filePath}: ${(err as Error).message}`);
+      console.warn(`[registry] Skipping invalid command template at ${filePath}: ${readErrorMessage(err)}`);
     }
   }
 

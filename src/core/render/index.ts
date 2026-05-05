@@ -27,16 +27,20 @@ export interface RenderedOutput {
   adapterVersion: string;
 }
 
-function prune<T>(value: T): T | undefined {
+function prune(value: unknown): unknown {
   if (Array.isArray(value)) {
     const items = value.map((item) => prune(item)).filter((item) => item !== undefined);
-    return (items.length > 0 ? items : undefined) as T | undefined;
+    return items.length > 0 ? items : undefined;
   }
   if (value && typeof value === "object") {
-    const entries = Object.entries(value)
-      .map(([key, entry]) => [key, prune(entry)])
-      .filter(([, entry]) => entry !== undefined);
-    return (entries.length > 0 ? Object.fromEntries(entries) : undefined) as T | undefined;
+    const entries: [string, unknown][] = [];
+    for (const [key, entry] of Object.entries(value)) {
+      const pruned = prune(entry);
+      if (pruned !== undefined) {
+        entries.push([key, pruned]);
+      }
+    }
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
   }
   if (value === undefined || value === null) {
     return undefined;

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
+import { parseFrontmatter } from "../../templates/frontmatter.js";
 import {
   archiveTask,
   completeTaskChecklistItem,
@@ -49,7 +50,7 @@ describe(".kernel project OS", () => {
     await expect(fs.stat(path.join(tmpDir, ".kernel", "knowledge", "research"))).resolves.toBeDefined();
   });
 
-  it("creates one markdown file plus one yaml file per work record", async () => {
+  it("creates one markdown file with frontmatter per work record", async () => {
     tmpDir = await mkTmpDir();
     await fs.writeFile(path.join(tmpDir, "package.json"), '{"name":"kernel-test"}');
 
@@ -57,13 +58,17 @@ describe(".kernel project OS", () => {
     const epic = await createEpic("Document setup path", { goalId: goal.goalId }, tmpDir);
     const task = await createTask("Write setup guide", { epicId: epic.epicId }, tmpDir);
 
-    expect(await listNames(path.join(tmpDir, goal.goalDir))).toEqual(["goal.md", "goal.yaml"]);
-    expect(await listNames(path.join(tmpDir, epic.epicDir))).toEqual(["epic.md", "epic.yaml"]);
-    expect(await listNames(path.join(tmpDir, task.taskDir))).toEqual(["task.md", "task.yaml"]);
+    expect(await listNames(path.join(tmpDir, goal.goalDir))).toEqual(["goal.md"]);
+    expect(await listNames(path.join(tmpDir, epic.epicDir))).toEqual(["epic.md"]);
+    expect(await listNames(path.join(tmpDir, task.taskDir))).toEqual(["task.md"]);
 
-    const taskYaml = await fs.readFile(path.join(tmpDir, task.taskDir, "task.yaml"), "utf-8");
-    expect(taskYaml).toContain(`epicId: ${epic.epicId}`);
-    expect(taskYaml).toContain(`goalId: ${goal.goalId}`);
+    const goalMarkdown = await fs.readFile(path.join(tmpDir, goal.goalDir, "goal.md"), "utf-8");
+    const epicMarkdown = await fs.readFile(path.join(tmpDir, epic.epicDir, "epic.md"), "utf-8");
+    const taskMarkdown = await fs.readFile(path.join(tmpDir, task.taskDir, "task.md"), "utf-8");
+
+    expect(parseFrontmatter(goalMarkdown).frontmatter).toMatchObject({ id: goal.goalId, title: "Improve onboarding" });
+    expect(parseFrontmatter(epicMarkdown).frontmatter).toMatchObject({ id: epic.epicId, goalId: goal.goalId });
+    expect(parseFrontmatter(taskMarkdown).frontmatter).toMatchObject({ id: task.taskId, epicId: epic.epicId, goalId: goal.goalId });
   });
 
   it("links knowledge records from tasks", async () => {
@@ -75,13 +80,14 @@ describe(".kernel project OS", () => {
 
     expect(await listNames(path.join(tmpDir, ".kernel", "knowledge", "research", research.knowledgeId))).toEqual([
       "research.md",
-      "research.yaml",
     ]);
     expect(await listKnowledge("research", tmpDir)).toEqual({
       items: [{ id: research.knowledgeId, title: "Use SQLite locally", kind: "research", status: "active" }],
     });
+    const researchMarkdown = await fs.readFile(path.join(tmpDir, ".kernel", "knowledge", "research", research.knowledgeId, "research.md"), "utf-8");
     const taskMarkdown = await fs.readFile(path.join(tmpDir, task.taskDir, "task.md"), "utf-8");
-    expect(taskMarkdown).toContain(research.knowledgeId);
+    expect(parseFrontmatter(researchMarkdown).frontmatter).toMatchObject({ id: research.knowledgeId, kind: "research" });
+    expect(parseFrontmatter(taskMarkdown).frontmatter).toMatchObject({ linkedKnowledgeIds: [research.knowledgeId] });
   });
 
   it("updates checklist state and journal inside task.md", async () => {

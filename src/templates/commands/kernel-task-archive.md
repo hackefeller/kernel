@@ -20,11 +20,24 @@ Archive a task when its planned work is complete or deliberately closed, then wr
    ```
    Note any incomplete checklist warnings from the output.
 
-3. **Read the task record.** Open `task.yaml` and `task.md` from the archived location (`.kernel/work/tasks/archived/<taskId>/`). Read linked knowledge, epic, and goal IDs from `task.yaml`.
+3. **Read the task record.** Open `task.md` from the archived location (`.kernel/work/tasks/archived/<taskId>/`). Read linked knowledge, epic, and goal IDs from the task frontmatter.
 
-4. **Write a learnings essay.** Create `.kernel/knowledge/learnings/<slug>.md` where `<slug>` is a short kebab-case summary of the task's core insight (not the task ID). Use this exact structure — every section is required:
+4. **Write a learnings essay.** Create `.kernel/knowledge/learnings/<slug>.md` where `<slug>` is a short kebab-case summary of the task's core insight (not the task ID). Start with frontmatter metadata, then use this exact structure — every section is required:
 
 ```markdown
+---
+id: <learning-slug>
+title: <Descriptive Title: What Was Done and the Central Insight>
+taskId: <taskId>
+archivedAt: <YYYY-MM-DD>
+linkedGoalIds:
+  - <goal-id>
+linkedEpicIds:
+  - <epic-id>
+linkedKnowledgeIds:
+  - <knowledge-id>
+---
+
 # <Descriptive Title: What Was Done and the Central Insight>
 
 ## Abstract
@@ -58,7 +71,7 @@ What is measurably different now? List what works, what was confirmed correct, a
 ## References
 
 - Task: `<taskId>` (archived <YYYY-MM-DD>)
-- Link any relevant epics, goals, decisions, research, or concept records by ID.
+- Link any relevant epics, goals, research, or concept records by ID.
 ```
 
 5. **Ensure the learnings directory exists** before writing:
@@ -66,8 +79,8 @@ What is measurably different now? List what works, what was confirmed correct, a
    mkdir -p .kernel/knowledge/learnings
    ```
 
-6. **Do not** create a yaml sidecar — learnings are plain markdown only.
+6. **Do not** create a yaml sidecar — the learning record itself is the markdown file with frontmatter.
 
 7. **Report** the path of the written essay and any archive warnings.
 
-To reopen an archived task, run `kernel task restore <taskId>`.
+To reopen an archived task, move the archived record back to `.kernel/work/tasks/active/` and update its frontmatter.

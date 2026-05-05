@@ -6,8 +6,8 @@ tags:
   - planning
 profile: core
 description: "Structure and create project-OS plans in repo-local .kernel: goals,
-  epics, tasks, and linked knowledge records. Use when planning new work, breaking
-  down goals, or capturing durable project knowledge."
+  epics, tasks, and knowledge records. Use when planning new work, breaking
+  down work, or capturing durable project knowledge."
 license: MIT
 metadata:
   author: project
@@ -24,7 +24,7 @@ when:
   - project knowledge needs to be captured in .kernel
 termination:
   - Correct .kernel record type selected
-  - One markdown file plus one YAML file created for each requested record
+  - One markdown file with frontmatter created for each requested record
   - Links between work and knowledge records captured
 outputs:
   - Goal, epic, task, or knowledge records under .kernel
@@ -49,6 +49,9 @@ Plan work and knowledge in the repo-local `.kernel` project OS. `.kernel` is com
 | Investigation or findings | Research |
 | Repeatable procedure | Runbook |
 | Domain term or concept | Concept |
+| Archived task insight or durable lesson | Learning |
+
+Knowledge records are research, runbooks, concepts, and learnings. Use research for investigations, runbooks for repeatable procedures, concepts for domain language, and learnings for durable post-task essays.
 
 Default to the smallest record that fully contains the work. A concrete implementation request is a task, not an epic.
 
@@ -65,24 +68,27 @@ Default to the smallest record that fully contains the work. A concrete implemen
 - `kernel goal new "<title>"`
 - `kernel epic new "<title>" --goal <goalId>`
 - `kernel task new "<title>" --epic <epicId>`
+- `kernel task archive [taskId]` — archives a task and writes a learnings essay
 - `kernel research new "<title>"`
 - `kernel runbook new "<title>"`
 - `kernel concept new "<title>"`
+- `kernel knowledge list`
 
 ## Markdown Contract
 
-Each record has exactly one markdown file plus one YAML tracking file:
+Each record has exactly one markdown file with frontmatter unless noted otherwise:
 
 - Goal: `.kernel/work/goals/<id>/goal.md`
 - Epic: `.kernel/work/epics/<id>/epic.md`
 - Task: `.kernel/work/tasks/active/<id>/task.md`
 - Knowledge: `.kernel/knowledge/research|runbooks|concepts/<id>/<kind>.md`
+- Learning: `.kernel/knowledge/learnings/<slug>.md` (markdown with frontmatter, written by task archive)
 
-The markdown file should contain the useful project memory: summary, context, acceptance criteria or details, plan, linked records, checklist when applicable, journal, and follow-ups.
+The markdown file should contain the useful project memory: summary, context, acceptance criteria or details, plan, linked records, checklist when applicable, journal, and follow-ups. Learning essays should additionally capture the abstract, problem, background, approach, implementation, outcomes, lessons learned, and references that explain the archived task.
 
 ## Guardrails
 
 - Do not create `brief.md`, `plan.md`, `tasks.md`, or `journal.md`.
 - Do not keep the plan only in chat.
 - Do not duplicate durable rationale; create or link a knowledge record.
-- YAML is for machine state. Markdown is for humans and agents.
+- Frontmatter is for record metadata. YAML is for machine state in `.kernel/state/`.

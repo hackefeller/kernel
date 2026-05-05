@@ -4,7 +4,7 @@
 
 It gives you one canonical place on your machine to define skills, agents, and commands, then syncs that brain into the dot-directories your agent hosts already use.
 
-It also gives each repo a committed `.kernel/` directory that acts as the full living documentation system for the project: goals, epics, tasks, decisions, research, runbooks, concepts, and local runtime state.
+It also gives each repo a committed `.kernel/` directory that acts as the full living documentation system for the project: goals, epics, tasks, research, runbooks, concepts, learnings, and local runtime state.
 
 ## What It Does
 
@@ -12,7 +12,7 @@ It also gives each repo a committed `.kernel/` directory that acts as the full l
 - Syncs that brain into enabled hosts like `.codex`, `.claude`, `.copilot`, and `.pi`
 - Keeps host-specific formatting at the edge through small materializers
 - Manages repo-local project memory in `.kernel/`
-- Uses one markdown file plus one YAML file per trackable record
+- Uses one markdown file with frontmatter per trackable record
 - Keeps `.kernel/state/` ignored for local pointers and runtime state
 
 ## Layout
@@ -40,30 +40,21 @@ It also gives each repo a committed `.kernel/` directory that acts as the full l
   work/
     goals/<id>/
       goal.md
-      goal.yaml
     epics/<id>/
       epic.md
-      epic.yaml
     tasks/
       active/<id>/
         task.md
-        task.yaml
       archived/<date>-<id>/
         task.md
-        task.yaml
   knowledge/
-    decisions/<id>/
-      decision.md
-      decision.yaml
     research/<id>/
       research.md
-      research.yaml
     runbooks/<id>/
       runbook.md
-      runbook.yaml
     concepts/<id>/
       concept.md
-      concept.yaml
+    learnings/<slug>.md
   state/
     pointers.json
 ```
@@ -77,10 +68,10 @@ kernel host list
 kernel goal new "<title>"
 kernel epic new "<title>" --goal <goalId>
 kernel task new "<title>" --epic <epicId>
-kernel task next
+kernel task status [id]
 kernel task done <checklist-item>
 kernel task archive [id]
-kernel decision new "<title>"
+kernel knowledge list
 kernel research new "<title>"
 kernel runbook new "<title>"
 kernel concept new "<title>"
@@ -94,7 +85,7 @@ kernel sync
 kernel goal new "make onboarding effortless"
 kernel epic new "document setup path" --goal make-onboarding-effortless
 kernel task new "write setup guide" --epic document-setup-path
-kernel task next
+kernel task status
 ```
 
 ## Local Workflows
@@ -123,7 +114,7 @@ just publish confirm=true
 
 - Define once locally, sync everywhere
 - `.kernel` is the repo's committed project memory
-- One markdown file per record; YAML is machine state
+- One markdown file per record; frontmatter is metadata
 - Durable knowledge is linked, not copied
 - Host-specific behavior stays in small adapters/materializers
 - Local work state should be visible in the repo, not hidden in chat

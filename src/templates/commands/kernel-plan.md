@@ -17,6 +17,7 @@ Plan into `.kernel`, not chat:
 - Goals live in `.kernel/work/goals/<id>/goal.md`
 - Epics live in `.kernel/work/epics/<id>/epic.md`
 - Tasks live in `.kernel/work/tasks/active/<id>/task.md`
-- Knowledge lives in `.kernel/knowledge/research|runbooks|concepts/<id>/<kind>.md` and `.kernel/knowledge/learnings/<slug>.md`
+- Knowledge lives in `.kernel/knowledge/research|runbooks|concepts/<id>/<kind>.md`
+- Learnings live in `.kernel/knowledge/learnings/<slug>.md`
 
-Each record has one markdown file plus one YAML tracking file. Link research, runbooks, and concepts from work records instead of copying knowledge around.
+Each record has one markdown file with frontmatter. Link research, runbooks, concepts, and learnings from work records instead of copying knowledge around.

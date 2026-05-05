@@ -2,6 +2,49 @@ export type RecordStatus = "active" | "done" | "archived";
 
 export type KnowledgeKind = "research" | "runbook" | "concept";
 
+export interface FrontmatterRecordBase {
+  id: string;
+  title: string;
+  status: RecordStatus;
+  createdAt: string;
+  updatedAt: string;
+  doneAt?: string;
+}
+
+export interface GoalFrontmatter extends FrontmatterRecordBase {
+  tags?: string[];
+  linkedKnowledgeIds?: string[];
+}
+
+export interface EpicFrontmatter extends FrontmatterRecordBase {
+  goalId?: string;
+  targetDate?: string;
+  tags?: string[];
+  linkedKnowledgeIds?: string[];
+}
+
+export interface TaskFrontmatter extends FrontmatterRecordBase {
+  goalId?: string;
+  epicId?: string;
+  tags?: string[];
+  linkedKnowledgeIds?: string[];
+  checklist: ChecklistItem[];
+}
+
+export interface KnowledgeFrontmatter extends FrontmatterRecordBase {
+  kind: KnowledgeKind;
+  tags?: string[];
+  linkedWorkIds?: string[];
+}
+
+export interface LearningFrontmatter extends FrontmatterRecordBase {
+  taskId: string;
+  archivedAt: string;
+  linkedGoalIds?: string[];
+  linkedEpicIds?: string[];
+  linkedKnowledgeIds?: string[];
+}
+
 export interface ChecklistItem {
   id: string;
   title: string;

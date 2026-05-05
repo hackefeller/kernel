@@ -3,7 +3,8 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import type { RenderedOutput } from "../../render/index.js";
-import { applySyncPlan, planSync, toManifestEntry } from "../index.js";
+import type { SyncManifestEntry } from "../../brain/types.js";
+import { applySyncPlan, planSync, toManifestEntry, type SyncPlan } from "../index.js";
 
 function fileOutput(content: string): RenderedOutput {
   return {
@@ -39,11 +40,11 @@ describe("sync planner", () => {
   });
 
   it("rewrites changed outputs and removes orphans", () => {
-    const previous = [
+    const previous: SyncManifestEntry[] = [
       toManifestEntry(fileOutput("before")),
       {
         path: "/tmp/orphan.md",
-        kind: "file" as const,
+        kind: "file",
         hash: "deadbeef",
         templateId: "orphan",
         adapterVersion: "2.0.0",
@@ -81,22 +82,22 @@ describe("sync planner", () => {
     await fs.writeFile(nextLinkTarget, "b", "utf-8");
     await fs.symlink(linkTarget, symlinkPath);
 
-    const plan = {
-      scope: "claude" as const,
+    const plan: SyncPlan = {
+      scope: "claude",
       actions: [
         {
-          scope: "claude" as const,
+          scope: "claude",
           path: filePath,
-          kind: "file" as const,
+          kind: "file",
           content: "new file",
           hash: "",
           templateId: "file",
           adapterVersion: "2.0.0",
         },
         {
-          scope: "claude" as const,
+          scope: "claude",
           path: symlinkPath,
-          kind: "symlink" as const,
+          kind: "symlink",
           target: nextLinkTarget,
           hash: "",
           templateId: "link",

@@ -9,14 +9,14 @@ argumentHint: what to find (e.g., 'where is auth middleware defined', 'why did t
 backedBySkill: kernel-locate
 ---
 
-Use this when a decision requires information that is not already in context. Do not guess when a search can answer the question. Return exact locations, not paraphrases.
+Use this when information is required that is not already in context. Do not guess when a search can answer the question. Return exact locations, not paraphrases.
 
 ## When to Use This
 
 - You need to find where something is defined, called, or configured before touching it.
 - You need to understand why a behavior exists before changing it.
 - You need documentation or prior art before committing to an approach.
-- A planning decision depends on information that is not yet in the conversation.
+- A planning choice depends on information that is not yet in the conversation.
 
 Do not use this as a substitute for reading code you are already about to change. Use it when the scope is unknown or the location is uncertain.
 
@@ -60,7 +60,7 @@ Find information already in the project:
 
 - Check `.kernel/work/tasks/active/<id>/task.md` for current task context
 - Check `.kernel/work/tasks/archived/` for completed similar work
-- Check `.kernel/knowledge/` for decisions, research, runbooks, and concepts
+- Check `.kernel/knowledge/` for research, runbooks, concepts, and learnings
 
 ## How to Report
 
