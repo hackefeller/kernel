@@ -19,7 +19,9 @@ Plans live in `.kernel`, not chat:
 
 - Goals live in `.kernel/work/goals/<id>/goal.md` (outcome containers)
 - Tasks live in `.kernel/work/tasks/active/<id>/task.md` (executable work units)
-- Knowledge lives in `.kernel/knowledge/notes/<id>/note.md` (reusable findings, procedures, and decisions)
+- Knowledge lives in `.kernel/knowledge/notes/<id>/note.md` (observations and research findings)
+- Guides live in `.kernel/knowledge/guides/<id>/guide.md` (procedures and runbooks)
+- Reference lives in `.kernel/knowledge/reference/<id>/reference.md` (canonical concepts and stable explanations)
 - Learnings live in `.kernel/knowledge/learnings/<slug>.md` (captured after task completion)
 - Local runtime state lives in `.kernel/state.json`
 

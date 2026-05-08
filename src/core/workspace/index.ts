@@ -18,14 +18,14 @@ import type {
   KnowledgeFrontmatter,
   KnowledgeKind,
   KnowledgeRecord,
-  ProjectOsLayout,
+  WorkspaceLayout,
   TaskFrontmatter,
   TaskRecord,
 } from "./types.js";
 
 const RECORD_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-function assertValidProjectOsId(id: string, label = "recordId"): string {
+function assertValidWorkspaceId(id: string, label = "recordId"): string {
   if (!RECORD_ID_PATTERN.test(id)) {
     throw new Error(`Invalid ${label}: ${id}`);
   }
@@ -49,7 +49,7 @@ async function findProjectRoot(startDir: string): Promise<string> {
   }
 }
 
-export async function resolveProjectOs(startDir = process.cwd()): Promise<ProjectOsLayout> {
+export async function resolveWorkspace(startDir = process.cwd()): Promise<WorkspaceLayout> {
   const rootDir = await findProjectRoot(startDir);
   const kernelDir = join(rootDir, ".kernel");
   const workDir = join(kernelDir, "work");
@@ -58,22 +58,27 @@ export async function resolveProjectOs(startDir = process.cwd()): Promise<Projec
     rootDir,
     kernelDir,
     readmePath: join(kernelDir, "README.md"),
-    projectPath: join(kernelDir, "project.md"),
     gitignorePath: join(kernelDir, ".gitignore"),
     goalsDir: join(workDir, "goals"),
     activeTasksDir: join(workDir, "tasks", "active"),
     archivedTasksDir: join(workDir, "tasks", "archived"),
     knowledgeDir,
     notesDir: join(knowledgeDir, "notes"),
+    guidesDir: join(knowledgeDir, "guides"),
+    referenceDir: join(knowledgeDir, "reference"),
+    learningsDir: join(knowledgeDir, "learnings"),
     statePath: join(kernelDir, "state.json"),
   };
 }
 
-async function ensureProjectOsLayout(layout: ProjectOsLayout): Promise<void> {
+async function ensureWorkspaceLayout(layout: WorkspaceLayout): Promise<void> {
   await ensureDir(layout.goalsDir);
   await ensureDir(layout.activeTasksDir);
   await ensureDir(layout.archivedTasksDir);
   await ensureDir(layout.notesDir);
+  await ensureDir(layout.guidesDir);
+  await ensureDir(layout.referenceDir);
+  await ensureDir(layout.learningsDir);
 }
 
 function renderKernelReadme(): string {
@@ -83,45 +88,24 @@ This directory is the committed project memory for this repository.
 
 ## Map
 
-- \`project.md\` - durable project brief, architecture notes, and conventions
 - \`work/goals/\` - strategic outcomes
 - \`work/tasks/active/\` - executable work
 - \`work/tasks/archived/\` - completed task records
-- \`knowledge/notes/\` - notes captured during and after work
+- \`knowledge/notes/\` - observations and research findings
+- \`knowledge/guides/\` - procedures and runbooks
+- \`knowledge/reference/\` - canonical concepts and stable explanations
+- \`knowledge/learnings/\` - post-task lessons and archive essays
 
+Project brief and conventions live in the repository \`README.md\` or \`AGENTS.md\`.
 Only \`state.json\` is local runtime state and should stay ignored.
 `;
 }
 
-function renderProjectBrief(): string {
-  return `# Project
-
-## Purpose
-
-<!-- What this repository exists to do. -->
-
-## Architecture
-
-<!-- High-level system shape, key modules, and boundaries. -->
-
-## Conventions
-
-<!-- Local development, testing, release, and documentation conventions. -->
-
-## Current Focus
-
-<!-- Link current goals and tasks. -->
-`;
-}
-
-export async function initializeProjectOs(startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
-  await ensureProjectOsLayout(layout);
+export async function initializeWorkspace(startDir = process.cwd()) {
+  const layout = await resolveWorkspace(startDir);
+  await ensureWorkspaceLayout(layout);
   if (!(await fileExists(layout.readmePath))) {
     await writeFile(layout.readmePath, renderKernelReadme());
-  }
-  if (!(await fileExists(layout.projectPath))) {
-    await writeFile(layout.projectPath, renderProjectBrief());
   }
   if (!(await fileExists(layout.gitignorePath))) {
     await writeFile(layout.gitignorePath, "state.json\n");
@@ -132,7 +116,6 @@ export async function initializeProjectOs(startDir = process.cwd()) {
   return {
     kernelDir: relative(layout.rootDir, layout.kernelDir),
     readmePath: relative(layout.rootDir, layout.readmePath),
-    projectPath: relative(layout.rootDir, layout.projectPath),
   };
 }
 
@@ -145,11 +128,11 @@ function defaultChecklist(): ChecklistItem[] {
   ];
 }
 
-async function writePointers(layout: ProjectOsLayout, currentTaskId: string | null): Promise<void> {
+async function writePointers(layout: WorkspaceLayout, currentTaskId: string | null): Promise<void> {
   await writeFile(layout.statePath, JSON.stringify({ currentTaskId }, null, 2));
 }
 
-async function readPointers(layout: ProjectOsLayout): Promise<{ currentTaskId: string | null }> {
+async function readPointers(layout: WorkspaceLayout): Promise<{ currentTaskId: string | null }> {
   if (!(await fileExists(layout.statePath))) {
     return { currentTaskId: null };
   }
@@ -385,7 +368,7 @@ ${renderLinkList(record.linkedWorkIds)}
 `;
 }
 
-async function saveGoal(layout: ProjectOsLayout, record: GoalRecord): Promise<void> {
+async function saveGoal(layout: WorkspaceLayout, record: GoalRecord): Promise<void> {
   const root = join(layout.goalsDir, record.id);
   await ensureDir(root);
   const markdownPath = join(root, "goal.md");
@@ -398,7 +381,7 @@ async function saveGoal(layout: ProjectOsLayout, record: GoalRecord): Promise<vo
   await writeMarkdownRecord(markdownPath, goalFrontmatter(record), body);
 }
 
-async function saveTask(layout: ProjectOsLayout, record: TaskRecord): Promise<void> {
+async function saveTask(layout: WorkspaceLayout, record: TaskRecord): Promise<void> {
   const root = join(layout.activeTasksDir, record.id);
   await ensureDir(root);
   const markdownPath = join(root, "task.md");
@@ -411,7 +394,7 @@ async function saveTask(layout: ProjectOsLayout, record: TaskRecord): Promise<vo
   await writeMarkdownRecord(markdownPath, taskFrontmatter(record), body);
 }
 
-async function saveKnowledge(layout: ProjectOsLayout, record: KnowledgeRecord): Promise<void> {
+async function saveKnowledge(layout: WorkspaceLayout, record: KnowledgeRecord): Promise<void> {
   const root = join(knowledgeDirForKind(layout), record.id);
   await ensureDir(root);
   const markdownPath = join(root, "note.md");
@@ -423,16 +406,16 @@ async function saveKnowledge(layout: ProjectOsLayout, record: KnowledgeRecord): 
   await writeMarkdownRecord(markdownPath, knowledgeFrontmatter(record), body);
 }
 
-async function loadGoal(layout: ProjectOsLayout, goalId: string): Promise<GoalRecord> {
-  const safeId = assertValidProjectOsId(goalId, "goalId");
+async function loadGoal(layout: WorkspaceLayout, goalId: string): Promise<GoalRecord> {
+  const safeId = assertValidWorkspaceId(goalId, "goalId");
   const markdownPath = join(layout.goalsDir, safeId, "goal.md");
   const sidecarPath = join(layout.goalsDir, safeId, "goal.yaml");
   const { frontmatter } = await readMarkdownRecord<GoalFrontmatter>(markdownPath, sidecarPath);
   return frontmatter;
 }
 
-async function loadTask(layout: ProjectOsLayout, taskId: string): Promise<TaskRecord> {
-  const safeId = assertValidProjectOsId(taskId, "taskId");
+async function loadTask(layout: WorkspaceLayout, taskId: string): Promise<TaskRecord> {
+  const safeId = assertValidWorkspaceId(taskId, "taskId");
   const root = join(layout.activeTasksDir, safeId);
   const markdownPath = join(root, "task.md");
   const sidecarPath = join(root, "task.yaml");
@@ -477,9 +460,9 @@ function matchesChecklistIdentifier(item: ChecklistItem, normalized: string): bo
   return item.id === normalized || slugify(item.title) === normalized;
 }
 
-async function resolveGoalId(layout: ProjectOsLayout, goalId?: string): Promise<string> {
+async function resolveGoalId(layout: WorkspaceLayout, goalId?: string): Promise<string> {
   if (goalId) {
-    return assertValidProjectOsId(goalId, "goalId");
+    return assertValidWorkspaceId(goalId, "goalId");
   }
   const ids = (await listDirs(layout.goalsDir)).sort();
   if (ids.length === 0) {
@@ -507,9 +490,9 @@ async function resolveGoalId(layout: ProjectOsLayout, goalId?: string): Promise<
   throw new Error(`Multiple goals found. Pass a goal ID: ${ids.join(", ")}`);
 }
 
-async function resolveTaskId(layout: ProjectOsLayout, taskId?: string): Promise<string> {
+async function resolveTaskId(layout: WorkspaceLayout, taskId?: string): Promise<string> {
   if (taskId) {
-    return assertValidProjectOsId(taskId, "taskId");
+    return assertValidWorkspaceId(taskId, "taskId");
   }
   const pointers = await readPointers(layout);
   if (
@@ -551,8 +534,8 @@ export async function createGoal(
   opts: { tags?: string[]; linkedKnowledgeIds?: string[] } = {},
   startDir = process.cwd(),
 ) {
-  const layout = await resolveProjectOs(startDir);
-  await ensureProjectOsLayout(layout);
+  const layout = await resolveWorkspace(startDir);
+  await ensureWorkspaceLayout(layout);
   const id = await nextUniqueId(layout.goalsDir, title, "goal");
   const now = new Date().toISOString();
   const record: GoalRecord = {
@@ -573,8 +556,8 @@ export async function createGoal(
 }
 
 export async function planGoal(goalId?: string, startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
-  await ensureProjectOsLayout(layout);
+  const layout = await resolveWorkspace(startDir);
+  await ensureWorkspaceLayout(layout);
   const id = await resolveGoalId(layout, goalId);
   const record = await loadGoal(layout, id);
   record.updatedAt = new Date().toISOString();
@@ -586,7 +569,7 @@ export async function planGoal(goalId?: string, startDir = process.cwd()) {
 }
 
 export async function goalStatus(goalId?: string, startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
+  const layout = await resolveWorkspace(startDir);
   const id = await resolveGoalId(layout, goalId);
   const record = await loadGoal(layout, id);
   return {
@@ -598,7 +581,7 @@ export async function goalStatus(goalId?: string, startDir = process.cwd()) {
 }
 
 export async function listGoals(startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
+  const layout = await resolveWorkspace(startDir);
   if (!(await directoryExists(layout.goalsDir))) {
     return { items: [] };
   }
@@ -612,7 +595,7 @@ export async function listGoals(startDir = process.cwd()) {
 }
 
 export async function doneGoal(goalId?: string, startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
+  const layout = await resolveWorkspace(startDir);
   const id = await resolveGoalId(layout, goalId);
   const record = await loadGoal(layout, id);
   const now = new Date().toISOString();
@@ -628,12 +611,12 @@ export async function createTask(
   opts: { goalId?: string; tags?: string[]; linkedKnowledgeIds?: string[] } = {},
   startDir = process.cwd(),
 ) {
-  const layout = await resolveProjectOs(startDir);
-  await ensureProjectOsLayout(layout);
+  const layout = await resolveWorkspace(startDir);
+  await ensureWorkspaceLayout(layout);
   const goalId = opts.goalId;
   if (
     goalId &&
-    !(await fileExists(join(layout.goalsDir, assertValidProjectOsId(goalId, "goalId"), "goal.md")))
+    !(await fileExists(join(layout.goalsDir, assertValidWorkspaceId(goalId, "goalId"), "goal.md")))
   ) {
     throw new Error(`Unknown goal: ${goalId}`);
   }
@@ -660,8 +643,8 @@ export async function createTask(
 }
 
 export async function planTask(taskId?: string, startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
-  await ensureProjectOsLayout(layout);
+  const layout = await resolveWorkspace(startDir);
+  await ensureWorkspaceLayout(layout);
   const id = await resolveTaskId(layout, taskId);
   const record = await loadTask(layout, id);
   record.updatedAt = new Date().toISOString();
@@ -674,7 +657,7 @@ export async function planTask(taskId?: string, startDir = process.cwd()) {
 }
 
 export async function nextTask(taskId?: string, startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
+  const layout = await resolveWorkspace(startDir);
   const id = await resolveTaskId(layout, taskId);
   const record = await loadTask(layout, id);
   const nextItem = record.checklist.find((item) => !item.done);
@@ -688,7 +671,7 @@ export async function nextTask(taskId?: string, startDir = process.cwd()) {
 }
 
 export async function taskStatus(taskId?: string, startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
+  const layout = await resolveWorkspace(startDir);
   const id = await resolveTaskId(layout, taskId);
   const record = await loadTask(layout, id);
   const complete = record.checklist.filter((item) => item.done).length;
@@ -712,7 +695,7 @@ export async function completeTaskChecklistItem(
   taskId?: string,
   startDir = process.cwd(),
 ) {
-  const layout = await resolveProjectOs(startDir);
+  const layout = await resolveWorkspace(startDir);
   const id = await resolveTaskId(layout, taskId);
   const record = await loadTask(layout, id);
   const normalized = slugify(checklistItemId);
@@ -738,7 +721,7 @@ export async function completeTaskChecklistItem(
 }
 
 async function syncTaskMarkdown(
-  layout: ProjectOsLayout,
+  layout: WorkspaceLayout,
   taskId: string,
   completedItem: ChecklistItem,
 ): Promise<void> {
@@ -774,7 +757,7 @@ async function syncTaskMarkdown(
 }
 
 async function appendTaskJournal(
-  layout: ProjectOsLayout,
+  layout: WorkspaceLayout,
   taskId: string,
   entry: string,
 ): Promise<void> {
@@ -800,7 +783,7 @@ async function appendTaskJournal(
 }
 
 export async function listTasks(opts: { archived?: boolean } = {}, startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
+  const layout = await resolveWorkspace(startDir);
   const baseDir = opts.archived ? layout.archivedTasksDir : layout.activeTasksDir;
   if (!(await directoryExists(baseDir))) {
     return {
@@ -849,7 +832,7 @@ async function pathExists(filePath: string): Promise<boolean> {
   return (await fileExists(filePath)) || (await directoryExists(filePath));
 }
 
-async function resolveArchiveTarget(layout: ProjectOsLayout, taskId: string): Promise<string> {
+async function resolveArchiveTarget(layout: WorkspaceLayout, taskId: string): Promise<string> {
   const baseName = `${new Date().toISOString().slice(0, 10)}-${taskId}`;
   let target = join(layout.archivedTasksDir, baseName);
   let index = 2;
@@ -861,8 +844,8 @@ async function resolveArchiveTarget(layout: ProjectOsLayout, taskId: string): Pr
 }
 
 export async function archiveTask(taskId?: string, startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
-  await ensureProjectOsLayout(layout);
+  const layout = await resolveWorkspace(startDir);
+  await ensureWorkspaceLayout(layout);
   const id = await resolveTaskId(layout, taskId);
   const record = await loadTask(layout, id);
   const incompleteItems = record.checklist.filter((item) => !item.done).map((item) => item.title);
@@ -909,9 +892,9 @@ export async function archiveTask(taskId?: string, startDir = process.cwd()) {
 }
 
 export async function restoreTask(taskId: string, startDir = process.cwd()) {
-  const safeId = assertValidProjectOsId(taskId, "taskId");
-  const layout = await resolveProjectOs(startDir);
-  await ensureProjectOsLayout(layout);
+  const safeId = assertValidWorkspaceId(taskId, "taskId");
+  const layout = await resolveWorkspace(startDir);
+  await ensureWorkspaceLayout(layout);
   let foundDir: string | null = null;
   for (const dirName of await listDirs(layout.archivedTasksDir)) {
     try {
@@ -962,7 +945,7 @@ export async function restoreTask(taskId: string, startDir = process.cwd()) {
   return { taskId: safeId, restoredTo: relative(layout.rootDir, dest) };
 }
 
-function knowledgeDirForKind(layout: ProjectOsLayout): string {
+function knowledgeDirForKind(layout: WorkspaceLayout): string {
   return layout.notesDir;
 }
 
@@ -971,8 +954,8 @@ export async function createKnowledge(
   opts: { tags?: string[]; linkedWorkIds?: string[] } = {},
   startDir = process.cwd(),
 ) {
-  const layout = await resolveProjectOs(startDir);
-  await ensureProjectOsLayout(layout);
+  const layout = await resolveWorkspace(startDir);
+  await ensureWorkspaceLayout(layout);
   const parentDir = knowledgeDirForKind(layout);
   const id = await nextUniqueId(parentDir, title, "note");
   const now = new Date().toISOString();
@@ -994,15 +977,15 @@ export async function createKnowledge(
   };
 }
 
-async function loadKnowledge(layout: ProjectOsLayout, id: string): Promise<KnowledgeRecord> {
-  const safeId = assertValidProjectOsId(id, "knowledgeId");
+async function loadKnowledge(layout: WorkspaceLayout, id: string): Promise<KnowledgeRecord> {
+  const safeId = assertValidWorkspaceId(id, "knowledgeId");
   const markdownPath = join(knowledgeDirForKind(layout), safeId, "note.md");
   const { frontmatter } = await readMarkdownRecord<KnowledgeFrontmatter>(markdownPath);
   return frontmatter;
 }
 
 export async function knowledgeStatus(id: string, startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
+  const layout = await resolveWorkspace(startDir);
   const record = await loadKnowledge(layout, id);
   return {
     knowledgeId: record.id,
@@ -1014,7 +997,7 @@ export async function knowledgeStatus(id: string, startDir = process.cwd()) {
 }
 
 export async function listKnowledge(startDir = process.cwd()) {
-  const layout = await resolveProjectOs(startDir);
+  const layout = await resolveWorkspace(startDir);
   const parentDir = knowledgeDirForKind(layout);
   if (!(await directoryExists(parentDir))) {
     return { items: [] };

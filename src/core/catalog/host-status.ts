@@ -1,11 +1,11 @@
 import * as os from "os";
 import * as path from "path";
-import { loadBrainConfig } from "./config.js";
+import { loadCatalogConfig } from "./config.js";
 import { detectInstalledHosts, getHostDescriptor, listKnownHosts } from "./hosts.js";
 import type { HostStatus } from "./types.js";
 
 export async function listHostStatus(homePath = os.homedir()): Promise<{ hosts: HostStatus[] }> {
-  const config = await loadBrainConfig(homePath);
+  const config = await loadCatalogConfig(homePath);
   const detected = new Set(await detectInstalledHosts(homePath));
   return {
     hosts: listKnownHosts().map((hostId) => {

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import * as fs from "node:fs/promises";
 import path from "node:path";
-import type { SyncAction, SyncHostResult, SyncManifestEntry } from "../brain/types.js";
+import type { SyncAction, SyncHostResult, SyncManifestEntry } from "../catalog/types.js";
 import type { RenderedOutput } from "../render/index.js";
 import { ensureDir } from "../utils/file-system.js";
 

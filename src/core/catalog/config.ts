@@ -3,11 +3,11 @@ import * as path from "path";
 import * as yaml from "yaml";
 import { z } from "zod";
 import { ensureDir, fileExists, readFile, writeFile } from "../utils/file-system.js";
-import type { BrainConfig, HostId } from "./types.js";
+import type { CatalogConfig, HostId } from "./types.js";
 
 const HostIdSchema = z.enum(["claude", "codex", "copilot", "pi"]);
 
-const BrainConfigSchema = z.object({
+const CatalogConfigSchema = z.object({
   version: z.string().default("2.0.0"),
   hosts: z.array(HostIdSchema).default([]),
   packages: z.array(z.string()).optional(),
@@ -26,38 +26,38 @@ export function getKernelHome(homePath = os.homedir()): string {
   return path.join(homePath, ".kernel");
 }
 
-export function getBrainRoot(homePath = os.homedir()): string {
-  return path.join(getKernelHome(homePath), "brain");
+export function getCatalogHome(homePath = os.homedir()): string {
+  return path.join(getKernelHome(homePath), "catalog");
 }
 
-export function getCatalogRoot(homePath = os.homedir()): string {
+export function getAgentsRoot(homePath = os.homedir()): string {
   return path.join(homePath, ".agents");
 }
 
-export function getBrainStateRoot(homePath = os.homedir()): string {
+export function getCatalogStateRoot(homePath = os.homedir()): string {
   return path.join(getKernelHome(homePath), "state");
 }
 
-export function getBrainConfigPath(homePath = os.homedir()): string {
+export function getCatalogConfigPath(homePath = os.homedir()): string {
   return path.join(getKernelHome(homePath), "config.yaml");
 }
 
 export function getSyncManifestPath(homePath = os.homedir()): string {
-  return path.join(getBrainStateRoot(homePath), "sync-manifest.json");
+  return path.join(getCatalogStateRoot(homePath), "sync-manifest.json");
 }
 
 function normalizeConfig(
-  input: Partial<BrainConfig> & { tools?: HostId[]; hosts?: HostId[] },
-): BrainConfig {
-  return BrainConfigSchema.parse({
+  input: Partial<CatalogConfig> & { tools?: HostId[]; hosts?: HostId[] },
+): CatalogConfig {
+  return CatalogConfigSchema.parse({
     version: input.version ?? "2.0.0",
     hosts: input.hosts ?? input.tools ?? [],
     packages: input.packages,
   });
 }
 
-export async function loadBrainConfig(homePath = os.homedir()): Promise<BrainConfig | null> {
-  const configPath = getBrainConfigPath(homePath);
+export async function loadCatalogConfig(homePath = os.homedir()): Promise<CatalogConfig | null> {
+  const configPath = getCatalogConfigPath(homePath);
   if (!(await fileExists(configPath))) {
     return null;
   }
@@ -65,12 +65,12 @@ export async function loadBrainConfig(homePath = os.homedir()): Promise<BrainCon
   return normalizeConfig(LEGACY_CONFIG_SCHEMA.parse(raw));
 }
 
-export async function saveBrainConfig(
-  config: BrainConfig,
+export async function saveCatalogConfig(
+  config: CatalogConfig,
   homePath = os.homedir(),
-): Promise<BrainConfig> {
+): Promise<CatalogConfig> {
   const normalized = normalizeConfig(config);
-  const configPath = getBrainConfigPath(homePath);
+  const configPath = getCatalogConfigPath(homePath);
   await ensureDir(path.dirname(configPath));
   await writeFile(
     configPath,
@@ -86,15 +86,15 @@ export async function saveBrainConfig(
   return normalized;
 }
 
-export async function ensureBrainConfig(
+export async function ensureCatalogConfig(
   homePath = os.homedir(),
-  defaults: Partial<BrainConfig> = {},
-): Promise<BrainConfig> {
-  const existing = await loadBrainConfig(homePath);
+  defaults: Partial<CatalogConfig> = {},
+): Promise<CatalogConfig> {
+  const existing = await loadCatalogConfig(homePath);
   if (existing) {
     return existing;
   }
-  return saveBrainConfig(
+  return saveCatalogConfig(
     {
       version: "2.0.0",
       hosts: defaults.hosts ?? [],

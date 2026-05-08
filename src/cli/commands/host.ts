@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { listHostStatus } from "../../core/brain/host-status.js";
+import { listHostStatus } from "../../core/catalog/host-status.js";
 import { printOutput } from "./output.js";
 
 export function registerHostCommand(program: Command): void {

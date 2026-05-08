@@ -1,17 +1,17 @@
 import * as fs from "fs/promises";
 import * as os from "os";
-import { getBrainConfigPath, getCatalogRoot, loadBrainConfig } from "./config.js";
+import { getAgentsRoot, getCatalogConfigPath, loadCatalogConfig } from "./config.js";
 import { loadCatalogSource } from "./catalog.js";
 import { renderHostOutputs } from "../render/index.js";
 import type { DoctorIssue, DoctorResult } from "./types.js";
 
 export async function doctorKernel(homePath = os.homedir()): Promise<DoctorResult> {
   const issues: DoctorIssue[] = [];
-  const config = await loadBrainConfig(homePath);
+  const config = await loadCatalogConfig(homePath);
   if (!config) {
     return {
-      configPath: getBrainConfigPath(homePath),
-      catalogPath: getCatalogRoot(homePath),
+      configPath: getCatalogConfigPath(homePath),
+      catalogPath: getAgentsRoot(homePath),
       hosts: [],
       issues: [{ level: "error", message: "Kernel is not initialized. Run `kernel sync` first." }],
     };
@@ -56,8 +56,8 @@ export async function doctorKernel(homePath = os.homedir()): Promise<DoctorResul
   }
 
   return {
-    configPath: getBrainConfigPath(homePath),
-    catalogPath: getCatalogRoot(homePath),
+    configPath: getCatalogConfigPath(homePath),
+    catalogPath: getAgentsRoot(homePath),
     hosts: config.hosts,
     issues,
   };

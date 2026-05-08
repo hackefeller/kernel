@@ -3,13 +3,13 @@ import { captureKnowledgeNote } from "./knowledge-capture.js";
 import {
   knowledgeStatus,
   listKnowledge,
-} from "../../core/project-os/index.js";
+} from "../../core/workspace/index.js";
 import { printOutput } from "./output.js";
 
 export function registerKnowledgeCommands(program: Command): void {
   const knowledge = program
     .command("knowledge")
-    .description("Manage project knowledge notes under .kernel/knowledge/notes/");
+    .description("Manage project knowledge buckets under .kernel/knowledge/");
 
   knowledge
     .command("new <title>")

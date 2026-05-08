@@ -5,12 +5,12 @@ import { renderCatalogOutputs, type RenderedOutput } from "../render/index.js";
 import { loadTemplateRegistry, parseAgentTemplate, parseSkillTemplate } from "../registry/index.js";
 import { resolveCatalog } from "../registry/resolver.js";
 import { directoryExists, fileExists, readFile } from "../utils/file-system.js";
-import { getBrainRoot, getCatalogRoot, loadBrainConfig } from "./config.js";
-import type { BrainConfig, BuiltInCatalog } from "./types.js";
+import { getAgentsRoot, getCatalogHome, loadCatalogConfig } from "./config.js";
+import type { CatalogConfig, BuiltInCatalog } from "./types.js";
 
 const ADAPTER_VERSION = "2.0.0";
 
-interface BrainPackageDefinition {
+interface CatalogPackageDefinition {
   id: string;
   skills: string[];
   agents: string[];
@@ -20,7 +20,7 @@ interface BrainPackageDefinition {
 export interface CatalogSource {
   catalog: BuiltInCatalog;
   outputs: RenderedOutput[];
-  source: "bundled" | "local-brain";
+  source: "bundled" | "local-catalog";
 }
 
 interface RawTemplateFile {
@@ -114,7 +114,7 @@ async function collectFileOutputs(
 
 function applyPackageSelection(
   catalog: BuiltInCatalog,
-  packages: BrainPackageDefinition[],
+  packages: CatalogPackageDefinition[],
   selectedPackageIds: string[],
 ): BuiltInCatalog {
   if (selectedPackageIds.length === 0 || packages.length === 0) {
@@ -137,10 +137,10 @@ function applyPackageSelection(
   };
 }
 
-async function loadBrainPackages(brainRoot: string): Promise<BrainPackageDefinition[]> {
-  const packagesRoot = path.join(brainRoot, "packages");
+async function loadCatalogPackages(catalogRoot: string): Promise<CatalogPackageDefinition[]> {
+  const packagesRoot = path.join(catalogRoot, "packages");
   const entries = await fs.readdir(packagesRoot, { withFileTypes: true }).catch(() => []);
-  const packages: BrainPackageDefinition[] = [];
+  const packages: CatalogPackageDefinition[] = [];
 
   for (const entry of entries) {
     if (!entry.isFile() || !entry.name.endsWith(".yaml")) {
@@ -161,16 +161,16 @@ async function loadBrainPackages(brainRoot: string): Promise<BrainPackageDefinit
   return packages;
 }
 
-async function loadLocalBrainCatalog(homePath: string, config: BrainConfig | null): Promise<CatalogSource | null> {
-  const brainRoot = getBrainRoot(homePath);
-  if (!(await directoryExists(brainRoot))) {
+async function loadLocalCatalogSource(homePath: string, config: CatalogConfig | null): Promise<CatalogSource | null> {
+  const catalogHome = getCatalogHome(homePath);
+  const agentsRoot = getAgentsRoot(homePath);
+  if (!(await directoryExists(catalogHome))) {
     return null;
   }
 
-  const skillsRoot = path.join(brainRoot, "skills");
-  const agentsRoot = path.join(brainRoot, "agents");
-  const commandsRoot = path.join(brainRoot, "commands");
-  const catalogRoot = getCatalogRoot(homePath);
+  const skillsRoot = path.join(catalogHome, "skills");
+  const localAgentsRoot = path.join(catalogHome, "agents");
+  const commandsRoot = path.join(catalogHome, "commands");
 
   const skills: BuiltInCatalog["skills"] = [];
   const skillOutputs: RenderedOutput[] = [];
@@ -189,18 +189,18 @@ async function loadLocalBrainCatalog(homePath: string, config: BrainConfig | nul
     template.name = entry.name;
     skills.push(template);
     skillOutputs.push(
-      ...(await collectFileOutputs(skillDir, path.join(catalogRoot, "skills", entry.name), entry.name)),
+      ...(await collectFileOutputs(skillDir, path.join(agentsRoot, "skills", entry.name), entry.name)),
     );
   }
 
   const agents: BuiltInCatalog["agents"] = [];
   const agentOutputs: RenderedOutput[] = [];
-  const agentEntries = await fs.readdir(agentsRoot, { withFileTypes: true }).catch(() => []);
+  const agentEntries = await fs.readdir(localAgentsRoot, { withFileTypes: true }).catch(() => []);
   for (const entry of agentEntries) {
     if (!entry.isDirectory()) {
       continue;
     }
-    const agentDir = path.join(agentsRoot, entry.name);
+    const agentDir = path.join(localAgentsRoot, entry.name);
     const agentPath = path.join(agentDir, "AGENT.md");
     if (!(await fileExists(agentPath))) {
       continue;
@@ -210,7 +210,7 @@ async function loadLocalBrainCatalog(homePath: string, config: BrainConfig | nul
     template.name = entry.name;
     agents.push(template);
     agentOutputs.push(
-      ...(await collectFileOutputs(agentDir, path.join(catalogRoot, "agents", entry.name), entry.name)),
+      ...(await collectFileOutputs(agentDir, path.join(agentsRoot, "agents", entry.name), entry.name)),
     );
   }
 
@@ -229,7 +229,7 @@ async function loadLocalBrainCatalog(homePath: string, config: BrainConfig | nul
       scope: "catalog",
       templateId: template.name,
       kind: "file",
-      path: path.join(catalogRoot, "commands", `${template.name}.yaml`),
+      path: path.join(agentsRoot, "commands", `${template.name}.yaml`),
       content,
       adapterVersion: ADAPTER_VERSION,
     });
@@ -245,7 +245,7 @@ async function loadLocalBrainCatalog(homePath: string, config: BrainConfig | nul
       agents: agents.sort((left, right) => left.name.localeCompare(right.name)),
       commands: commands.sort((left, right) => left.name.localeCompare(right.name)),
     },
-    await loadBrainPackages(brainRoot),
+    await loadCatalogPackages(catalogHome),
     config?.packages ?? [],
   );
 
@@ -266,7 +266,7 @@ async function loadLocalBrainCatalog(homePath: string, config: BrainConfig | nul
         return selectedCommandNames.has(output.templateId);
       })
       .sort((left, right) => left.path.localeCompare(right.path)),
-    source: "local-brain",
+    source: "local-catalog",
   };
 }
 
@@ -281,8 +281,8 @@ export function getBuiltInCatalog(): BuiltInCatalog {
 }
 
 export async function loadCatalogSource(homePath: string): Promise<CatalogSource> {
-  const config = await loadBrainConfig(homePath);
-  const local = await loadLocalBrainCatalog(homePath, config);
+  const config = await loadCatalogConfig(homePath);
+  const local = await loadLocalCatalogSource(homePath, config);
   if (local) {
     return local;
   }

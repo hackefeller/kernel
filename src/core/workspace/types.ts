@@ -71,16 +71,18 @@ export interface KnowledgeRecord {
   updatedAt: string;
 }
 
-export interface ProjectOsLayout {
+export interface WorkspaceLayout {
   rootDir: string;
   kernelDir: string;
   readmePath: string;
-  projectPath: string;
   gitignorePath: string;
   goalsDir: string;
   activeTasksDir: string;
   archivedTasksDir: string;
   knowledgeDir: string;
   notesDir: string;
+  guidesDir: string;
+  referenceDir: string;
+  learningsDir: string;
   statePath: string;
 }

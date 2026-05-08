@@ -8,7 +8,7 @@ import {
   planTask,
   restoreTask,
   taskStatus,
-} from "../../core/project-os/index.js";
+} from "../../core/workspace/index.js";
 
 import { printOutput } from "./output.js";
 

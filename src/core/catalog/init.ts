@@ -1,20 +1,20 @@
 import * as os from "os";
-import { ensureBrainConfig, getBrainConfigPath, getCatalogRoot } from "./config.js";
+import { ensureCatalogConfig, getAgentsRoot, getCatalogConfigPath } from "./config.js";
 import { detectInstalledHosts } from "./hosts.js";
 import { syncBuiltInCatalog } from "./storage.js";
-import { syncKernelBrain } from "./sync.js";
+import { syncKernelCatalog } from "./sync.js";
 import type { HostId, InitResult } from "./types.js";
 
 export async function initializeKernel(homePath = os.homedir()): Promise<InitResult> {
   const detectedHosts = await detectInstalledHosts(homePath);
   const hosts: HostId[] = detectedHosts.length > 0 ? detectedHosts : ["codex"];
-  const config = await ensureBrainConfig(homePath, { hosts });
+  const config = await ensureCatalogConfig(homePath, { hosts });
   await syncBuiltInCatalog(homePath);
-  await syncKernelBrain(homePath);
+  await syncKernelCatalog(homePath);
 
   return {
-    configPath: getBrainConfigPath(homePath),
-    catalogPath: getCatalogRoot(homePath),
+    configPath: getCatalogConfigPath(homePath),
+    catalogPath: getAgentsRoot(homePath),
     detectedHosts,
     enabledHosts: config.hosts,
   };

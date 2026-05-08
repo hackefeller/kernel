@@ -60,7 +60,7 @@ Find information already in the project:
 
 - Check `.kernel/work/tasks/active/<id>/task.md` for current task context
 - Check `.kernel/work/tasks/archived/` for completed similar work
-- Check `.kernel/knowledge/notes/` for knowledge notes and `.kernel/knowledge/learnings/` for post-task essays
+- Check `.kernel/knowledge/notes/` for observations and research, `.kernel/knowledge/guides/` for procedures, `.kernel/knowledge/reference/` for stable concepts, and `.kernel/knowledge/learnings/` for post-task essays
 
 ## How to Report
 

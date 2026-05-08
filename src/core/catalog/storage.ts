@@ -4,24 +4,24 @@ import * as os from "os";
 import { applySyncPlan, planSync } from "../sync/index.js";
 import { ensureDir } from "../utils/file-system.js";
 import { loadCatalogSource } from "./catalog.js";
-import { getCatalogRoot } from "./config.js";
+import { getAgentsRoot } from "./config.js";
 import type { SyncHostResult, SyncManifestEntry } from "./types.js";
 
 function getSkillsRoot(homePath = os.homedir()): string {
-  return path.join(getCatalogRoot(homePath), "skills");
+  return path.join(getAgentsRoot(homePath), "skills");
 }
 
-function getAgentsRoot(homePath = os.homedir()): string {
-  return path.join(getCatalogRoot(homePath), "agents");
+function getAgentsDirectoryRoot(homePath = os.homedir()): string {
+  return path.join(getAgentsRoot(homePath), "agents");
 }
 
 function getCommandsRoot(homePath = os.homedir()): string {
-  return path.join(getCatalogRoot(homePath), "commands");
+  return path.join(getAgentsRoot(homePath), "commands");
 }
 
 export async function ensureCatalogLayout(homePath = os.homedir()): Promise<void> {
   await ensureDir(getSkillsRoot(homePath));
-  await ensureDir(getAgentsRoot(homePath));
+  await ensureDir(getAgentsDirectoryRoot(homePath));
   await ensureDir(getCommandsRoot(homePath));
 }
 
@@ -35,4 +35,3 @@ export async function syncBuiltInCatalog(
   const result = await applySyncPlan(plan);
   return { tracked: plan.tracked, result };
 }
-

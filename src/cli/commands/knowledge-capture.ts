@@ -1,5 +1,5 @@
 import type { Command } from "commander";
-import { createKnowledge } from "../../core/project-os/index.js";
+import { createKnowledge } from "../../core/workspace/index.js";
 import { printOutput } from "./output.js";
 
 function parseCsv(value?: string): string[] | undefined {

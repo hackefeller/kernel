@@ -5,15 +5,15 @@ import { renderHostOutputs } from "../render/index.js";
 import { applySyncPlan, planSync } from "../sync/index.js";
 import { directoryExists, fileExists, writeFile } from "../utils/file-system.js";
 import { loadCatalogSource } from "./catalog.js";
-import { ensureBrainConfig, getCatalogRoot, getSyncManifestPath, loadBrainConfig } from "./config.js";
+import { ensureCatalogConfig, getAgentsRoot, getSyncManifestPath, loadCatalogConfig } from "./config.js";
 import { detectInstalledHosts, getHostAdapter, getHostDescriptor, listKnownHosts } from "./hosts.js";
 import { syncBuiltInCatalog } from "./storage.js";
 import type {
-    HostId,
-    SyncHostResult,
-    SyncManifest,
-    SyncManifestEntry,
-    SyncResult,
+  HostId,
+  SyncHostResult,
+  SyncManifest,
+  SyncManifestEntry,
+  SyncResult,
 } from "./types.js";
 
 async function loadSyncManifest(homePath = os.homedir()): Promise<SyncManifest> {
@@ -42,9 +42,9 @@ async function saveSyncManifest(manifest: SyncManifest, homePath = os.homedir())
 
 async function cleanupCatalogOrphans(homePath: string, tracked: Set<string>): Promise<number> {
   const roots = [
-    path.join(getCatalogRoot(homePath), "skills"),
-    path.join(getCatalogRoot(homePath), "agents"),
-    path.join(getCatalogRoot(homePath), "commands"),
+    path.join(getAgentsRoot(homePath), "skills"),
+    path.join(getAgentsRoot(homePath), "agents"),
+    path.join(getAgentsRoot(homePath), "commands"),
   ];
   let removed = 0;
 
@@ -136,15 +136,15 @@ async function syncHost(
   return { result, tracked: plan.tracked };
 }
 
-export async function syncKernelBrain(homePath = os.homedir()): Promise<SyncResult> {
-  const existingConfig = await loadBrainConfig(homePath);
+export async function syncKernelCatalog(homePath = os.homedir()): Promise<SyncResult> {
+  const existingConfig = await loadCatalogConfig(homePath);
 
   if (!existingConfig) {
     const detectedHosts = await detectInstalledHosts(homePath);
     const hosts: HostId[] = detectedHosts.length > 0 ? detectedHosts : ["codex"];
-    await ensureBrainConfig(homePath, { hosts });
+    await ensureCatalogConfig(homePath, { hosts });
   }
-  const activeConfig = existingConfig ?? (await loadBrainConfig(homePath));
+  const activeConfig = existingConfig ?? (await loadCatalogConfig(homePath));
   if (!activeConfig) {
     throw new Error("Unable to load Kernel configuration.");
   }
@@ -194,7 +194,7 @@ export async function syncKernelBrain(homePath = os.homedir()): Promise<SyncResu
 
   await saveSyncManifest(nextManifest, homePath);
   return {
-    catalogPath: getCatalogRoot(homePath),
+    catalogPath: getAgentsRoot(homePath),
     hosts,
   };
 }

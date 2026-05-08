@@ -1,9 +1,9 @@
 import path from "node:path";
 import * as yaml from "yaml";
 import type { ToolCommandAdapter } from "../adapters/types.js";
-import { getHostAdapter, getHostDescriptor, mapProjectPathToHome } from "../brain/hosts.js";
-import type { HostId } from "../brain/types.js";
-import { getCatalogRoot } from "../brain/config.js";
+import { getHostAdapter, getHostDescriptor, mapProjectPathToHome } from "../catalog/hosts.js";
+import type { HostId } from "../catalog/types.js";
+import { getAgentsRoot } from "../catalog/config.js";
 import type {
   AgentTemplate,
   CommandTemplate,
@@ -84,7 +84,7 @@ export function renderCatalogOutputs(
   homePath: string,
   version: string,
 ): RenderedOutput[] {
-  const catalogRoot = getCatalogRoot(homePath);
+  const catalogRoot = getAgentsRoot(homePath);
   const outputs: RenderedOutput[] = [];
 
   for (const skill of catalog.skills) {
@@ -135,7 +135,7 @@ export function renderHostOutputs(
 ): RenderedOutput[] {
   const adapter = getHostAdapter(hostId);
   const outputs: RenderedOutput[] = [];
-  const catalogRoot = getCatalogRoot(homePath);
+  const catalogRoot = getAgentsRoot(homePath);
 
   if (adapter.mirrorSkills !== false) {
     for (const skill of catalog.skills) {

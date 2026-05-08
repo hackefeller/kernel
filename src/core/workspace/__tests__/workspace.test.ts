@@ -9,7 +9,7 @@ import {
   createGoal,
   createKnowledge,
   createTask,
-  initializeProjectOs,
+  initializeWorkspace,
   listKnowledge,
   listTasks,
   nextTask,
@@ -18,14 +18,14 @@ import {
 } from "../index.js";
 
 async function mkTmpDir(): Promise<string> {
-  return fs.mkdtemp(path.join(os.tmpdir(), "project-os-test-"));
+  return fs.mkdtemp(path.join(os.tmpdir(), "workspace-test-"));
 }
 
 async function listNames(dir: string): Promise<string[]> {
   return (await fs.readdir(dir)).sort();
 }
 
-describe(".kernel project OS", () => {
+describe(".kernel workspace", () => {
   let tmpDir = "";
 
   afterEach(async () => {
@@ -39,15 +39,18 @@ describe(".kernel project OS", () => {
     tmpDir = await mkTmpDir();
     await fs.writeFile(path.join(tmpDir, "package.json"), '{"name":"kernel-test"}');
 
-    const result = await initializeProjectOs(tmpDir);
+    const result = await initializeWorkspace(tmpDir);
 
     expect(result.kernelDir).toBe(".kernel");
+    expect(result.readmePath).toBe(".kernel/README.md");
     expect(await fs.readFile(path.join(tmpDir, ".kernel", ".gitignore"), "utf-8")).toBe("state.json\n");
     await expect(fs.stat(path.join(tmpDir, ".kernel", "README.md"))).resolves.toBeDefined();
-    await expect(fs.stat(path.join(tmpDir, ".kernel", "project.md"))).resolves.toBeDefined();
     await expect(fs.stat(path.join(tmpDir, ".kernel", "state.json"))).resolves.toBeDefined();
     await expect(fs.stat(path.join(tmpDir, ".kernel", "work", "tasks", "active"))).resolves.toBeDefined();
     await expect(fs.stat(path.join(tmpDir, ".kernel", "knowledge", "notes"))).resolves.toBeDefined();
+    await expect(fs.stat(path.join(tmpDir, ".kernel", "knowledge", "guides"))).resolves.toBeDefined();
+    await expect(fs.stat(path.join(tmpDir, ".kernel", "knowledge", "reference"))).resolves.toBeDefined();
+    await expect(fs.stat(path.join(tmpDir, ".kernel", "knowledge", "learnings"))).resolves.toBeDefined();
   });
 
   it("creates one markdown file with frontmatter per work record", async () => {

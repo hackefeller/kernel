@@ -5,7 +5,7 @@ import {
   goalStatus,
   listGoals,
   planGoal,
-} from "../../core/project-os/index.js";
+} from "../../core/workspace/index.js";
 import { printOutput } from "./output.js";
 
 function parseCsv(value?: string): string[] | undefined {

@@ -49,7 +49,6 @@ validate-binary:
 
     HOME="$HOME_FIXTURE" "$KERNEL" --json sync | jq -e '.catalogPath | length > 0' >/dev/null
     test -f .kernel/README.md
-    test -f .kernel/project.md
     test -f .kernel/.gitignore
     test -d .kernel/state
     grep -qx 'state/' .kernel/.gitignore
@@ -58,7 +57,7 @@ validate-binary:
     GOAL_ID="$(printf '%s' "$GOAL_JSON" | jq -r '.goalId')"
     printf 'goal=%s\n' "$GOAL_ID"
 
-    DECISION_JSON="$(HOME="$HOME_FIXTURE" "$KERNEL" --json note 'Use repo-local project OS')"
+    DECISION_JSON="$(HOME="$HOME_FIXTURE" "$KERNEL" --json note 'Use repo-local workspace')"
     DECISION_ID="$(printf '%s' "$DECISION_JSON" | jq -r '.knowledgeId')"
     printf 'note=%s\n' "$DECISION_ID"
 

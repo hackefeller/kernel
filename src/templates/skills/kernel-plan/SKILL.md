@@ -108,7 +108,9 @@ Record the raw natural-language request.
 ### Stage 2. Investigate
 Gather signal from:
 - `.kernel/work/` — existing goals and tasks
-- `.kernel/knowledge/notes/` — existing knowledge notes
+- `.kernel/knowledge/notes/` — observations and research findings
+- `.kernel/knowledge/guides/` — procedures and runbooks
+- `.kernel/knowledge/reference/` — canonical concepts and stable explanations
 - repository — relevant code, docs, tests, configs, changelogs
 - external sources — official docs, frameworks, standards, security/compliance requirements
 
@@ -243,8 +245,14 @@ Each record has exactly one markdown file with frontmatter:
 - Journal
 
 **Knowledge** (`.kernel/knowledge/notes/<id>/note.md`):
-- Summary, context, findings, decisions, or procedures
+- Summary, context, findings, or decisions
 - Linked work if relevant
+
+**Guides** (`.kernel/knowledge/guides/<id>/guide.md`):
+- Procedures, runbooks, verification steps, or repeatable workflows
+
+**Reference** (`.kernel/knowledge/reference/<id>/reference.md`):
+- Stable concepts, glossary entries, and canonical explanations
 
 **Learning** (`.kernel/knowledge/learnings/<slug>.md`):
 - Written during task archive

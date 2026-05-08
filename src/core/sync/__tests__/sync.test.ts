@@ -3,7 +3,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import type { RenderedOutput } from "../../render/index.js";
-import type { SyncManifestEntry } from "../../brain/types.js";
+import type { SyncManifestEntry } from "../../catalog/types.js";
 import { applySyncPlan, planSync, toManifestEntry, type SyncPlan } from "../index.js";
 
 function fileOutput(content: string): RenderedOutput {

@@ -3,9 +3,9 @@ import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
 import packageJson from "../../../package.json";
-import { getBuiltInCatalog } from "../../core/brain/catalog.js";
-import { saveBrainConfig } from "../../core/brain/config.js";
-import { syncKernelBrain } from "../../core/brain/sync.js";
+import { getBuiltInCatalog } from "../../core/catalog/catalog.js";
+import { saveCatalogConfig } from "../../core/catalog/config.js";
+import { syncKernelCatalog } from "../../core/catalog/sync.js";
 
 
 async function mkTmpDir(): Promise<string> {
@@ -17,7 +17,7 @@ describe("kernel sync", () => {
 
   beforeEach(async () => {
     homeDir = await mkTmpDir();
-    await saveBrainConfig({ version: "2.0.0", hosts: ["claude", "codex", "copilot", "pi"] }, homeDir);
+    await saveCatalogConfig({ version: "2.0.0", hosts: ["claude", "codex", "copilot", "pi"] }, homeDir);
   });
 
   afterEach(async () => {
@@ -42,7 +42,7 @@ describe("kernel sync", () => {
       await fs.writeFile(canonicalSkillPath, staleSkillContents, "utf-8");
       await fs.writeFile(unrelatedFile, "keep me", "utf-8");
 
-      const result = await syncKernelBrain(homeDir);
+      const result = await syncKernelCatalog(homeDir);
 
       expect(result.catalogPath).toBe(path.join(homeDir, ".agents"));
 
@@ -86,7 +86,7 @@ describe("kernel sync", () => {
     );
     await fs.writeFile(path.join(staleCommandDir, "kernel-spec-plan.md"), "legacy", "utf-8");
 
-    await syncKernelBrain(homeDir);
+    await syncKernelCatalog(homeDir);
 
     await expect(fs.lstat(path.join(staleSkillDir, "kernel-openspec-explore"))).rejects.toThrow();
     await expect(fs.lstat(path.join(staleCommandDir, "kernel-spec-plan.md"))).rejects.toThrow();

@@ -1,14 +1,14 @@
 import type { Command } from "commander";
-import { initializeProjectOs } from "../../core/project-os/index.js";
-import { syncKernelBrain } from "../../core/brain/sync.js";
+import { initializeWorkspace } from "../../core/workspace/index.js";
+import { syncKernelCatalog } from "../../core/catalog/sync.js";
 import { printOutput } from "./output.js";
 
 export function registerSyncCommand(program: Command): void {
   program
     .command("sync")
-    .description("Initialize (if needed) and sync Kernel brain + project OS")
+    .description("Initialize (if needed) and sync Kernel catalog + workspace")
     .action(async () => {
-      await initializeProjectOs();
-      printOutput(await syncKernelBrain(), program.opts() as { json?: boolean });
+      await initializeWorkspace();
+      printOutput(await syncKernelCatalog(), program.opts() as { json?: boolean });
     });
 }

@@ -2,7 +2,7 @@ import type { AgentTemplate, CommandTemplate, SkillTemplate } from "../templates
 
 export type HostId = "claude" | "codex" | "copilot" | "pi";
 
-export interface BrainConfig {
+export interface CatalogConfig {
   version: string;
   hosts: HostId[];
   packages?: string[];

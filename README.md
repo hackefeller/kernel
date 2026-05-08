@@ -1,15 +1,15 @@
 # Kernel
 
-`kernel` is a local-first brain and project OS for coding agents.
+`kernel` is a local-first catalog and workspace for coding agents.
 
-It gives you one canonical place on your machine to define skills, agents, and commands, then syncs that brain into the dot-directories your agent hosts already use.
+It gives you one canonical place on your machine to define skills, agents, and commands, then syncs that catalog into the dot-directories your agent hosts already use.
 
-It also gives each repo a committed `.kernel/` directory that acts as the full living documentation system for the project: goals, tasks, research, runbooks, concepts, learnings, and local runtime state.
+It also gives each repo a committed `.kernel/` directory that acts as the full living project memory for the project: goals, tasks, research, runbooks, concepts, learnings, and local runtime state.
 
 ## What It Does
 
-- Stores your canonical agent brain in `~/.kernel/brain/`
-- Syncs that brain into enabled hosts like `.codex`, `.claude`, `.copilot`, and `.pi`
+- Stores your canonical agent catalog in `~/.kernel/catalog/`
+- Syncs that catalog into enabled hosts like `.codex`, `.claude`, `.copilot`, and `.pi`
 - Keeps host-specific formatting at the edge through small materializers
 - Manages repo-local project memory in `.kernel/`
 - Uses one markdown file with frontmatter per trackable record
@@ -17,12 +17,12 @@ It also gives each repo a committed `.kernel/` directory that acts as the full l
 
 ## Layout
 
-### User Brain
+### User Catalog
 
 ```text
 ~/.kernel/
   config.yaml
-  brain/
+  catalog/
     skills/<id>/SKILL.md
     agents/<id>/AGENT.md
     commands/<id>.yaml
@@ -30,12 +30,11 @@ It also gives each repo a committed `.kernel/` directory that acts as the full l
     sync-manifest.json
 ```
 
-### Repo Project OS
+### Repo Workspace
 
 ```text
 .kernel/
   README.md
-  project.md
   .gitignore
   work/
     goals/<id>/
@@ -46,12 +45,12 @@ It also gives each repo a committed `.kernel/` directory that acts as the full l
       archived/<date>-<id>/
         task.md
   knowledge/
-    research/<id>/
-      research.md
-    runbooks/<id>/
-      runbook.md
-    concepts/<id>/
-      concept.md
+    notes/<id>/
+      note.md
+    guides/<id>/
+      guide.md
+    reference/<id>/
+      reference.md
     learnings/<slug>.md
   state.json
 ```

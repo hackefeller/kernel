@@ -19,7 +19,7 @@ const program = new Command();
 
 program
   .name("kernel")
-  .description("Local brain and workflow OS for coding agents")
+  .description("Local catalog and workflow OS for coding agents")
   .version(packageJson.version)
   .option("--json", "Emit JSON output instead of human-readable output")
   .showHelpAfterError();
