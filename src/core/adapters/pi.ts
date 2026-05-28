@@ -30,6 +30,8 @@ export const piAdapter: ToolCommandAdapter = {
   toolId: "pi",
   toolName: "Pi",
   skillsDir: ".pi",
+  // Pi discovers shared Agent Skills locations directly, including ~/.agents/skills,
+  // so we keep Kernel skills canonical there instead of mirroring duplicates into .pi.
   mirrorSkills: false,
 
   getSkillPath(skillName: string): string {

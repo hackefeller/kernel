@@ -12,6 +12,10 @@ export interface SyncPlan {
   tracked: SyncManifestEntry[];
 }
 
+export interface ApplySyncPlanOptions {
+  verbose?: boolean;
+}
+
 function hashValue(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -73,22 +77,37 @@ async function applyAction(action: SyncAction): Promise<"created" | "updated"> {
   return stat ? "updated" : "created";
 }
 
-export async function applySyncPlan(plan: SyncPlan): Promise<SyncHostResult> {
+export async function applySyncPlan(
+  plan: SyncPlan,
+  options: ApplySyncPlanOptions = {},
+): Promise<SyncHostResult> {
   let removed = 0;
   let created = 0;
   let updated = 0;
+  const removedPaths: string[] = [];
+  const createdPaths: string[] = [];
+  const updatedPaths: string[] = [];
 
   for (const entryPath of plan.remove) {
     await fs.rm(entryPath, { force: true, recursive: true });
     removed += 1;
+    if (options.verbose) {
+      removedPaths.push(entryPath);
+    }
   }
 
   for (const action of plan.actions) {
     const result = await applyAction(action);
     if (result === "created") {
       created += 1;
+      if (options.verbose) {
+        createdPaths.push(action.path);
+      }
     } else {
       updated += 1;
+      if (options.verbose) {
+        updatedPaths.push(action.path);
+      }
     }
   }
 
@@ -98,5 +117,8 @@ export async function applySyncPlan(plan: SyncPlan): Promise<SyncHostResult> {
     updated,
     removed,
     tracked: plan.tracked.map((entry) => entry.path),
+    createdPaths: options.verbose ? createdPaths : undefined,
+    updatedPaths: options.verbose ? updatedPaths : undefined,
+    removedPaths: options.verbose ? removedPaths : undefined,
   };
 }

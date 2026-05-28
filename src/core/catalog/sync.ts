@@ -3,6 +3,7 @@ import path from "node:path";
 import * as os from "os";
 import { renderHostOutputs } from "../render/index.js";
 import { applySyncPlan, planSync } from "../sync/index.js";
+import { KERNEL_TEMPLATE_PREFIX } from "../../templates/constants.js";
 import { directoryExists, fileExists, writeFile } from "../utils/file-system.js";
 import { loadCatalogSource } from "./catalog.js";
 import { ensureCatalogConfig, getAgentsRoot, getSyncManifestPath, loadCatalogConfig } from "./config.js";
@@ -40,13 +41,18 @@ async function saveSyncManifest(manifest: SyncManifest, homePath = os.homedir())
   await writeFile(getSyncManifestPath(homePath), JSON.stringify(manifest, null, 2));
 }
 
-async function cleanupCatalogOrphans(homePath: string, tracked: Set<string>): Promise<number> {
+async function cleanupCatalogOrphans(
+  homePath: string,
+  tracked: Set<string>,
+  options: { verbose?: boolean } = {},
+): Promise<CleanupResult> {
   const roots = [
     path.join(getAgentsRoot(homePath), "skills"),
     path.join(getAgentsRoot(homePath), "agents"),
     path.join(getAgentsRoot(homePath), "commands"),
   ];
   let removed = 0;
+  const removedPaths: string[] = [];
 
   async function walk(currentPath: string): Promise<void> {
     const entries = await fs.readdir(currentPath, { withFileTypes: true }).catch(() => []);
@@ -63,6 +69,9 @@ async function cleanupCatalogOrphans(homePath: string, tracked: Set<string>): Pr
       if (!tracked.has(absolutePath)) {
         await fs.rm(absolutePath, { force: true });
         removed += 1;
+        if (options.verbose) {
+          removedPaths.push(absolutePath);
+        }
       }
     }
   }
@@ -73,20 +82,66 @@ async function cleanupCatalogOrphans(homePath: string, tracked: Set<string>): Pr
     }
   }
 
-  return removed;
+  return { removed, removedPaths };
 }
 
-async function cleanupHostOrphans(hostId: HostId, homePath: string, tracked: Set<string>): Promise<number> {
+interface CleanupResult {
+  removed: number;
+  removedPaths: string[];
+}
+
+function isKernelManagedHostPath(hostId: HostId, homePath: string, entryPath: string): boolean {
+  const host = getHostDescriptor(hostId);
+  const adapter = getHostAdapter(hostId);
+  const hostBase = path.join(homePath, host.homeDir);
+  const relativePath = path.relative(hostBase, entryPath);
+
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    return false;
+  }
+
+  if (adapter.getManifestPath && relativePath === adapter.getManifestPath()) {
+    return true;
+  }
+
+  const segments = relativePath.split(path.sep);
+  const topLevel = segments[0];
+  if (!topLevel) {
+    return false;
+  }
+
+  if (!["skills", "agents", "commands"].includes(topLevel)) {
+    return false;
+  }
+
+  if (topLevel === "skills") {
+    const skillName = segments[1];
+    return typeof skillName === "string" && skillName.startsWith(KERNEL_TEMPLATE_PREFIX);
+  }
+
+  return path.parse(path.basename(entryPath)).name.startsWith(KERNEL_TEMPLATE_PREFIX);
+}
+
+async function cleanupHostOrphans(
+  hostId: HostId,
+  homePath: string,
+  tracked: Set<string>,
+  options: { verbose?: boolean } = {},
+): Promise<CleanupResult> {
   const host = getHostDescriptor(hostId);
   const adapter = getHostAdapter(hostId);
   const hostBase = path.join(homePath, host.homeDir);
   let removed = 0;
+  const removedPaths: string[] = [];
 
   if (adapter.mirrorSkills === false && adapter.getManifestPath) {
     const manifestPath = path.join(hostBase, adapter.getManifestPath());
     if (await fileExists(manifestPath)) {
       await fs.rm(manifestPath, { force: true });
       removed += 1;
+      if (options.verbose) {
+        removedPaths.push(manifestPath);
+      }
     }
   }
 
@@ -102,9 +157,12 @@ async function cleanupHostOrphans(hostId: HostId, homePath: string, tracked: Set
         }
         continue;
       }
-      if (!tracked.has(entryPath)) {
+      if (!tracked.has(entryPath) && isKernelManagedHostPath(hostId, homePath, entryPath)) {
         await fs.rm(entryPath, { force: true, recursive: true });
         removed += 1;
+        if (options.verbose) {
+          removedPaths.push(entryPath);
+        }
       }
     }
   }
@@ -120,23 +178,36 @@ async function cleanupHostOrphans(hostId: HostId, homePath: string, tracked: Set
     }
   }
 
-  return removed;
+  return { removed, removedPaths };
 }
 
 async function syncHost(
   hostId: HostId,
   previous: SyncManifestEntry[],
   homePath: string,
+  options: { verbose?: boolean } = {},
 ): Promise<{ result: SyncHostResult; tracked: SyncManifestEntry[] }> {
   const source = await loadCatalogSource(homePath);
   const outputs = renderHostOutputs(source.catalog, hostId, homePath, "2.0.0");
   const plan = planSync(hostId, outputs, previous);
-  const result = await applySyncPlan(plan);
-  result.removed += await cleanupHostOrphans(hostId, homePath, new Set(plan.tracked.map((entry) => entry.path)));
+  const result = await applySyncPlan(plan, options);
+  const cleanup = await cleanupHostOrphans(
+    hostId,
+    homePath,
+    new Set(plan.tracked.map((entry) => entry.path)),
+    options,
+  );
+  result.removed += cleanup.removed;
+  if (options.verbose && cleanup.removedPaths.length > 0) {
+    result.removedPaths = [...(result.removedPaths ?? []), ...cleanup.removedPaths];
+  }
   return { result, tracked: plan.tracked };
 }
 
-export async function syncKernelCatalog(homePath = os.homedir()): Promise<SyncResult> {
+export async function syncKernelCatalog(
+  homePath = os.homedir(),
+  options: { verbose?: boolean } = {},
+): Promise<SyncResult> {
   const existingConfig = await loadCatalogConfig(homePath);
 
   if (!existingConfig) {
@@ -153,15 +224,19 @@ export async function syncKernelCatalog(homePath = os.homedir()): Promise<SyncRe
   const hosts: SyncHostResult[] = [];
   const nextManifest: SyncManifest = { version: 2, scopes: {} };
 
-  const catalogSync = await syncBuiltInCatalog(homePath, manifest.scopes.catalog ?? []);
+  const catalogSync = await syncBuiltInCatalog(homePath, manifest.scopes.catalog ?? [], options);
   nextManifest.scopes.catalog = catalogSync.tracked;
-  const catalogResultRemoved = await cleanupCatalogOrphans(
+  const catalogCleanup = await cleanupCatalogOrphans(
     homePath,
     new Set(catalogSync.tracked.map((entry) => entry.path)),
+    options,
   );
   const catalogResult = {
     ...catalogSync.result,
-    removed: catalogSync.result.removed + catalogResultRemoved,
+    removed: catalogSync.result.removed + catalogCleanup.removed,
+    removedPaths: options.verbose
+      ? [...(catalogSync.result.removedPaths ?? []), ...catalogCleanup.removedPaths]
+      : undefined,
   };
   if (catalogResult.created > 0 || catalogResult.updated > 0 || catalogResult.removed > 0) {
     hosts.push(catalogResult);
@@ -172,6 +247,7 @@ export async function syncKernelCatalog(homePath = os.homedir()): Promise<SyncRe
       hostId,
       manifest.scopes[hostId] ?? [],
       homePath,
+      options,
     );
     hosts.push(result);
     nextManifest.scopes[hostId] = tracked;
@@ -179,14 +255,15 @@ export async function syncKernelCatalog(homePath = os.homedir()): Promise<SyncRe
 
   for (const hostId of listKnownHosts()) {
     if (!activeConfig.hosts.includes(hostId)) {
-      const removed = await cleanupHostOrphans(hostId, homePath, new Set());
-      if (removed > 0) {
+      const cleanup = await cleanupHostOrphans(hostId, homePath, new Set(), options);
+      if (cleanup.removed > 0) {
         hosts.push({
           host: hostId,
           created: 0,
           updated: 0,
-          removed,
+          removed: cleanup.removed,
           tracked: [],
+          removedPaths: options.verbose ? cleanup.removedPaths : undefined,
         });
       }
     }

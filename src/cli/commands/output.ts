@@ -3,6 +3,7 @@ import { inspect } from "node:util";
 
 export interface OutputOptions {
   json?: boolean;
+  verbose?: boolean;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -73,6 +74,37 @@ function printArray(value: unknown[]): void {
   }
 }
 
+function printVerboseSyncDetails(value: Record<string, unknown>): void {
+  const hosts = value.hosts;
+  if (!Array.isArray(hosts) || hosts.length === 0) {
+    return;
+  }
+
+  for (const host of hosts) {
+    if (!isPlainObject(host) || typeof host.host !== "string") {
+      continue;
+    }
+
+    const updatedPaths = Array.isArray(host.updatedPaths) ? host.updatedPaths : [];
+    const removedPaths = Array.isArray(host.removedPaths) ? host.removedPaths : [];
+    if (updatedPaths.length === 0 && removedPaths.length === 0) {
+      continue;
+    }
+
+    console.log(chalk.bold(`${host.host} details`));
+
+    if (updatedPaths.length > 0) {
+      console.log(chalk.cyan("replaced"));
+      printArray(updatedPaths);
+    }
+
+    if (removedPaths.length > 0) {
+      console.log(chalk.cyan("removed"));
+      printArray(removedPaths);
+    }
+  }
+}
+
 function printObject(value: Record<string, unknown>): void {
   const entries = Object.entries(value);
 
@@ -116,6 +148,9 @@ export function printOutput(value: unknown, options: OutputOptions = {}): void {
 
   if (isPlainObject(value)) {
     printObject(value);
+    if (options.verbose) {
+      printVerboseSyncDetails(value);
+    }
     return;
   }
 

@@ -28,10 +28,11 @@ export async function ensureCatalogLayout(homePath = os.homedir()): Promise<void
 export async function syncBuiltInCatalog(
   homePath = os.homedir(),
   previous: SyncManifestEntry[] = [],
+  options: { verbose?: boolean } = {},
 ): Promise<{ tracked: SyncManifestEntry[]; result: SyncHostResult }> {
   await ensureCatalogLayout(homePath);
   const source = await loadCatalogSource(homePath);
   const plan = planSync("catalog", source.outputs, previous);
-  const result = await applySyncPlan(plan);
+  const result = await applySyncPlan(plan, options);
   return { tracked: plan.tracked, result };
 }

@@ -51,6 +51,9 @@ export interface SyncHostResult {
   updated: number;
   removed: number;
   tracked: string[];
+  createdPaths?: string[];
+  updatedPaths?: string[];
+  removedPaths?: string[];
 }
 
 export interface SyncResult {

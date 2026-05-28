@@ -7,8 +7,15 @@ export function registerSyncCommand(program: Command): void {
   program
     .command("sync")
     .description("Initialize (if needed) and sync Kernel catalog + workspace")
-    .action(async () => {
+    .option("--verbose", "Show replaced and removed paths during sync")
+    .action(async (options: { verbose?: boolean }) => {
       await initializeWorkspace();
-      printOutput(await syncKernelCatalog(), program.opts() as { json?: boolean });
+      printOutput(
+        await syncKernelCatalog(undefined, { verbose: options.verbose }),
+        {
+          ...(program.opts() as { json?: boolean }),
+          verbose: options.verbose,
+        },
+      );
     });
 }
