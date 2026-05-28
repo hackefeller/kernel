@@ -57,7 +57,7 @@ Build type-safe, contract-first APIs with consistent error handling, explicit au
 | HTTP framework    | Hono                                     |
 | Schema validation | Zod                                      |
 | RPC client        | Hono RPC (`hc<typeof AppRouter>`)        |
-| Auth middleware   | Better-Auth (via `kernel-auth-contract`) |
+| Auth middleware   | Better-Auth (via `kernel-better-auth`) |
 
 Never use: Express, Fastify, Koa, tRPC, or any other HTTP framework.
 
