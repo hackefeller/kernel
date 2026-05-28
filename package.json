@@ -1,6 +1,6 @@
 {
   "name": "@hackefeller/kernel",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Local brain and workflow OS for coding agents.",
   "keywords": [
     "agent",
