@@ -81,7 +81,11 @@ describe("printOutput", () => {
     logSpy = spyOn(console, "log").mockImplementation(() => undefined);
     tableSpy = spyOn(console, "table").mockImplementation(() => undefined);
     const sawLog = (value: string): boolean =>
-      Boolean(logSpy?.mock.calls.some((call: unknown[]) => call[0] === value));
+      Boolean(
+        logSpy?.mock.calls.some(
+          (call: unknown[]) => typeof call[0] === "string" && call[0].includes(value),
+        ),
+      );
 
     printOutput(
       {

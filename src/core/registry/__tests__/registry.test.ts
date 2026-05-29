@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import { loadTemplateRegistry, parseAgentTemplate, parseCommandTemplate, parseSkillTemplate, resetTemplateRegistryCache } from "../index.js";
+import { loadTemplateRegistry, parseAgentTemplate, parseCommandTemplate, parseSkillTemplate } from "../index.js";
 import { resolveCatalog } from "../resolver.js";
 
 async function mkTmpDir(): Promise<string> {
@@ -72,7 +72,6 @@ body`;
     const originalCwd = process.cwd();
     const tmpDir = await mkTmpDir();
     process.chdir(tmpDir);
-    resetTemplateRegistryCache();
 
     try {
       const registry = loadTemplateRegistry();
@@ -85,7 +84,6 @@ body`;
       expect(registry.agents).toHaveLength(0);
     } finally {
       process.chdir(originalCwd);
-      resetTemplateRegistryCache();
       await fs.rm(tmpDir, { recursive: true, force: true });
     }
   });

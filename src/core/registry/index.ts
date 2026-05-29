@@ -330,10 +330,6 @@ function validateRegistry(registry: TemplateRegistry): TemplateRegistry {
   return registry;
 }
 
-export function resetTemplateRegistryCache(): void {
-  registryCache.clear();
-}
-
 function getExecutableDir(): string | undefined {
   try {
     return path.dirname(realpathSync(process.execPath));
@@ -439,7 +435,12 @@ function hasTemplates(registry: TemplateRegistry): boolean {
 }
 
 export function loadTemplateRegistry(): TemplateRegistry {
-  const cacheKey = "filesystem";
+  const root = resolveTemplateRoot();
+  if (!root) {
+    throw new Error("No kernel templates were found. Install the packaged templates or run from the repository source.");
+  }
+
+  const cacheKey = root;
   const cached = registryCache.get(cacheKey);
   if (cached) {
     return cached;

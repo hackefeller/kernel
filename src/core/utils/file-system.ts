@@ -5,7 +5,6 @@
  */
 
 import * as fs from "fs/promises";
-import type { Stats } from "fs";
 import * as path from "path";
 
 /**
@@ -62,13 +61,6 @@ export async function removeDir(dirPath: string): Promise<void> {
 }
 
 /**
- * Remove a file
- */
-export async function removeFile(filePath: string): Promise<void> {
-  await fs.unlink(filePath);
-}
-
-/**
  * List directories in a path
  */
 export async function listDirs(dirPath: string): Promise<string[]> {
@@ -77,50 +69,5 @@ export async function listDirs(dirPath: string): Promise<string[]> {
     return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
   } catch {
     return [];
-  }
-}
-
-/**
- * List files in a directory
- */
-export async function listFiles(dirPath: string): Promise<string[]> {
-  try {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
-    return entries.filter((entry) => entry.isFile()).map((entry) => entry.name);
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Copy a file
- */
-export async function copyFile(srcPath: string, destPath: string): Promise<void> {
-  await ensureDir(path.dirname(destPath));
-  await fs.copyFile(srcPath, destPath);
-}
-
-/**
- * Check if path is a directory
- */
-export async function isDirectory(filePath: string): Promise<boolean> {
-  return directoryExists(filePath);
-}
-
-/**
- * Check if path is a file
- */
-export async function isFile(filePath: string): Promise<boolean> {
-  return fileExists(filePath);
-}
-
-/**
- * Get file stats
- */
-export async function getFileStats(filePath: string): Promise<Stats | null> {
-  try {
-    return await fs.stat(filePath);
-  } catch {
-    return null;
   }
 }

@@ -1,22 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import * as fs from "fs/promises";
-import * as path from "path";
 import * as os from "os";
+import * as path from "path";
 
 import {
-  directoryExists,
-  fileExists,
-  ensureDir,
-  writeFile,
-  readFile,
-  removeDir,
-  removeFile,
-  listDirs,
-  listFiles,
-  copyFile,
-  isDirectory,
-  isFile,
-  getFileStats,
+    directoryExists,
+    ensureDir,
+    fileExists,
+    listDirs,
+    readFile,
+    removeDir,
+    writeFile,
 } from "../file-system.js";
 
 async function mkTmpDir(): Promise<string> {
@@ -125,7 +119,7 @@ describe("File System Utilities", () => {
   });
 
   // --------------------------------------------------------------------------
-  // removeDir / removeFile
+  // removeDir
   // --------------------------------------------------------------------------
 
   describe("removeDir", () => {
@@ -142,21 +136,8 @@ describe("File System Utilities", () => {
     });
   });
 
-  describe("removeFile", () => {
-    it("removes an existing file", async () => {
-      const f = path.join(tmpDir, "delete-me.txt");
-      await writeFile(f, "bye");
-      await removeFile(f);
-      expect(await fileExists(f)).toBe(false);
-    });
-
-    it("throws for a nonexistent file", async () => {
-      await expect(removeFile(path.join(tmpDir, "missing.txt"))).rejects.toThrow();
-    });
-  });
-
   // --------------------------------------------------------------------------
-  // listDirs / listFiles
+  // listDirs
   // --------------------------------------------------------------------------
 
   describe("listDirs", () => {
@@ -178,105 +159,6 @@ describe("File System Utilities", () => {
 
     it("returns empty array for nonexistent path", async () => {
       expect(await listDirs(path.join(tmpDir, "nope"))).toEqual([]);
-    });
-  });
-
-  describe("listFiles", () => {
-    it("returns only file names", async () => {
-      await writeFile(path.join(tmpDir, "a.txt"), "a");
-      await writeFile(path.join(tmpDir, "b.txt"), "b");
-      await ensureDir(path.join(tmpDir, "subdir"));
-      const files = await listFiles(tmpDir);
-      expect(files).toContain("a.txt");
-      expect(files).toContain("b.txt");
-      expect(files).not.toContain("subdir");
-    });
-
-    it("returns empty array for empty directory", async () => {
-      const empty = path.join(tmpDir, "empty2");
-      await ensureDir(empty);
-      expect(await listFiles(empty)).toHaveLength(0);
-    });
-
-    it("returns empty array for nonexistent path", async () => {
-      expect(await listFiles(path.join(tmpDir, "nope"))).toEqual([]);
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // copyFile
-  // --------------------------------------------------------------------------
-
-  describe("copyFile", () => {
-    it("copies file content to destination", async () => {
-      const src = path.join(tmpDir, "src.txt");
-      const dest = path.join(tmpDir, "copy", "dest.txt");
-      await writeFile(src, "copied content");
-      await copyFile(src, dest);
-      expect(await readFile(dest)).toBe("copied content");
-    });
-
-    it("creates destination parent directories", async () => {
-      const src = path.join(tmpDir, "orig.txt");
-      const dest = path.join(tmpDir, "deep", "path", "copy.txt");
-      await writeFile(src, "data");
-      await copyFile(src, dest);
-      expect(await fileExists(dest)).toBe(true);
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // isDirectory / isFile
-  // --------------------------------------------------------------------------
-
-  describe("isDirectory", () => {
-    it("returns true for a directory", async () => {
-      expect(await isDirectory(tmpDir)).toBe(true);
-    });
-
-    it("returns false for a file", async () => {
-      const f = path.join(tmpDir, "f.txt");
-      await writeFile(f, "x");
-      expect(await isDirectory(f)).toBe(false);
-    });
-
-    it("returns false for nonexistent path", async () => {
-      expect(await isDirectory(path.join(tmpDir, "nope"))).toBe(false);
-    });
-  });
-
-  describe("isFile", () => {
-    it("returns true for a file", async () => {
-      const f = path.join(tmpDir, "isfile.txt");
-      await writeFile(f, "x");
-      expect(await isFile(f)).toBe(true);
-    });
-
-    it("returns false for a directory", async () => {
-      expect(await isFile(tmpDir)).toBe(false);
-    });
-
-    it("returns false for nonexistent path", async () => {
-      expect(await isFile(path.join(tmpDir, "nope"))).toBe(false);
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // getFileStats
-  // --------------------------------------------------------------------------
-
-  describe("getFileStats", () => {
-    it("returns a Stats object for an existing file", async () => {
-      const f = path.join(tmpDir, "stats.txt");
-      await writeFile(f, "stat me");
-      const stats = await getFileStats(f);
-      expect(stats).not.toBeNull();
-      expect(stats!.isFile()).toBe(true);
-    });
-
-    it("returns null for a nonexistent path", async () => {
-      const stats = await getFileStats(path.join(tmpDir, "ghost"));
-      expect(stats).toBeNull();
     });
   });
 });
