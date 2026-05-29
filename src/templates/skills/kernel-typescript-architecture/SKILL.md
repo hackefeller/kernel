@@ -136,7 +136,7 @@ apps/
 }
 ```
 
-Build with project references: `bun run typecheck` (tsgo under the hood). This rebuilds only changed packages.
+Build with project references: `pnpm typecheck` (tsgo under the hood). This rebuilds only changed packages.
 
 ## Base tsconfig
 

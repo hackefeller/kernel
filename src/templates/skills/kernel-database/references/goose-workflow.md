@@ -21,13 +21,13 @@
 
 ```bash
 # Status
-DATABASE_URL=<url> bun run --filter @your-pkg/db goose:status
+DATABASE_URL=<url> pnpm --filter @your-pkg/db goose:status
 
 # Apply pending
-DATABASE_URL=<url> bun run --filter @your-pkg/db goose:up
+DATABASE_URL=<url> pnpm --filter @your-pkg/db goose:up
 
 # Roll back latest
-DATABASE_URL=<url> bun run --filter @your-pkg/db goose:down
+DATABASE_URL=<url> pnpm --filter @your-pkg/db goose:down
 ```
 
 Run all commands from the **monorepo root**.
@@ -57,7 +57,7 @@ make db-new-migration NAME=<description>
 # edit the generated file
 make db-migrate-sync   # apply dev + test + regenerate types
 make db-verify-types   # assert types match schema
-bun run lint           # catch any downstream type errors
+pnpm lint              # catch any downstream type errors
 ```
 
 ## Generated Types

@@ -95,7 +95,7 @@ Canonical section order:
 Rules:
 
 - No project-specific package names (use `@your-org/auth`, not your actual org name)
-- No project-specific commands (`bun run lint` is fine; `bun run validate-db-imports` is not)
+- No project-specific commands (`pnpm lint` is fine; `pnpm validate-db-imports` is not)
 - No team names, repo names, or proprietary tool names
 - Code examples → `references/` files; keep body for rules and process
 - Do not repeat frontmatter fields (`when:`, `applicability:`) in the body

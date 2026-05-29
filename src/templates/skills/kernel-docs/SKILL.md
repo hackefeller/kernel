@@ -55,8 +55,8 @@ Publish documentation, cut versioned releases, and record feature demos.
 ## Building Documentation
 
 ```bash
-bun run docs:build        # outputs to docs/.vitepress/dist/
-bun run docs:preview      # serve locally at http://localhost:4173
+pnpm docs:build        # outputs to docs/.vitepress/dist/
+pnpm docs:preview      # serve locally at http://localhost:4173
 ```
 
 ## Validate Before Publishing
@@ -65,7 +65,7 @@ Run these checks before every deploy. Any failure is a deploy blocker.
 
 ```bash
 # Broken links
-bun run docs:check-links  # or: npx linkcheck ./docs/.vitepress/dist
+pnpm docs:check-links  # or: npx linkcheck ./docs/.vitepress/dist
 
 # Heading hierarchy — h1 → h2 → h3, no skips
 # Search index is built automatically by Vitepress

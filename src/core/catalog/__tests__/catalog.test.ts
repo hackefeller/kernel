@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it } from "bun:test";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
+import { saveCatalogConfig } from "../config.js";
 import { doctorKernel } from "../doctor.js";
 import { initializeKernel } from "../init.js";
-import { saveCatalogConfig } from "../config.js";
 import { syncKernelCatalog } from "../sync.js";
 
 async function mkTmpDir(): Promise<string> {
@@ -30,6 +30,16 @@ describe("catalog v2", () => {
 
     const skillPath = path.join(homeDir, ".agents", "skills", "kernel-build", "SKILL.md");
     expect(await fs.stat(skillPath)).toBeDefined();
+
+    const projectReferencePath = path.join(
+      homeDir,
+      ".agents",
+      "skills",
+      "kernel-project",
+      "references",
+      "scaffold.md",
+    );
+    expect(await fs.readFile(projectReferencePath, "utf-8")).toContain("Project Scaffold");
 
     const linkedSkillPath = path.join(homeDir, ".codex", "skills", "kernel-build");
     const linkStats = await fs.lstat(linkedSkillPath);

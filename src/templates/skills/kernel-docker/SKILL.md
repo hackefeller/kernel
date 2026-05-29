@@ -104,28 +104,37 @@ Use multi-stage builds to minimize image size and attack surface.
 # syntax=docker/dockerfile:1
 
 # ── Stage 1: Dependencies ──────────────────────────────────────────
-FROM oven/bun:latest AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package.json bun.lockb ./
-RUN bun install --frozen-lockfile --production
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
 
 # ── Stage 2: Build ────────────────────────────────────────────────
-FROM oven/bun:latest AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN bun run build
+RUN pnpm build
 
 # ── Stage 3: Runtime ──────────────────────────────────────────────
-FROM oven/bun:distroless AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
-COPY --from=builder --chown=1000:1000 /app/dist ./dist
-COPY --from=deps    --chown=1000:1000 /app/node_modules ./node_modules
-USER 1000
+ENV NODE_ENV=production
+COPY --from=builder --chown=node:node /app/dist ./dist
+COPY --from=deps    --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package.json ./package.json
+USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -qO- http://localhost:3000/health || exit 1
-ENTRYPOINT ["bun", "dist/index.js"]
+ENTRYPOINT ["node", "dist/index.js"]
 ```
 
 ## Multi-Container Networking

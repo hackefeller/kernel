@@ -59,5 +59,5 @@ or npm overrides.
 }
 ```
 
-Use your package manager's override/resolution feature to enforce versions at
-the root. When adding dependencies, specify exact versions without `^` or `~`.
+Use `pnpm.overrides` in the root `package.json` to enforce versions. When
+adding dependencies, specify exact versions without `^` or `~`.

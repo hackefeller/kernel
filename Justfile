@@ -50,14 +50,14 @@ validate-binary:
     HOME="$HOME_FIXTURE" "$KERNEL" --json sync | jq -e '.catalogPath | length > 0' >/dev/null
     test -f .kernel/README.md
     test -f .kernel/.gitignore
-    test -d .kernel/state
-    grep -qx 'state/' .kernel/.gitignore
+    test -f .kernel/state.json
+    grep -qx 'state.json' .kernel/.gitignore
 
     GOAL_JSON="$(HOME="$HOME_FIXTURE" "$KERNEL" --json goal new 'Improve onboarding' --tag docs,dx)"
     GOAL_ID="$(printf '%s' "$GOAL_JSON" | jq -r '.goalId')"
     printf 'goal=%s\n' "$GOAL_ID"
 
-    DECISION_JSON="$(HOME="$HOME_FIXTURE" "$KERNEL" --json note 'Use repo-local workspace')"
+    DECISION_JSON="$(HOME="$HOME_FIXTURE" "$KERNEL" --json knowledge new 'Use repo-local workspace')"
     DECISION_ID="$(printf '%s' "$DECISION_JSON" | jq -r '.knowledgeId')"
     printf 'note=%s\n' "$DECISION_ID"
 
@@ -104,6 +104,8 @@ fix: ci
 install: build
     mkdir -p "$HOME/bin"
     cp "{{kernel}}" "$HOME/bin/kernel"
+    rm -rf "$HOME/bin/templates"
+    cp -R "{{root}}/dist/templates" "$HOME/bin/templates"
     chmod +x "$HOME/bin/kernel"
     printf 'installed=%s\n' "$HOME/bin/kernel"
 

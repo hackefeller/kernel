@@ -75,15 +75,15 @@ Never use: React Native CLI (use Expo), `Animated` from React Native core, `Flat
 
 **Always try Expo Go first before creating custom builds.**
 
-Most Expo apps work in Expo Go without any custom native code. Before running `bunx expo run:ios` or `bunx expo run:android`:
+Most Expo apps work in Expo Go without any custom native code. Before running `pnpm exec expo run:ios` or `pnpm exec expo run:android`:
 
-1. Start with `bunx expo start` — scan the QR code with Expo Go
+1. Start with `pnpm exec expo start` — scan the QR code with Expo Go
 2. Test thoroughly in Expo Go
 3. Only create custom builds when required (see below)
 
 ### When Custom Builds Are Required
 
-You need `bunx expo run:ios/android` or `eas build` only when using:
+You need `pnpm exec expo run:ios/android` or `eas build` only when using:
 
 - **Local Expo modules** (custom native code in `modules/`)
 - **Apple targets** (widgets, app clips, extensions via `@bacons/apple-targets`)

@@ -51,10 +51,10 @@ Tests verify behavior, not implementation. A test that passes when behavior is b
 
 | Concern                 | Tool                               |
 | ----------------------- | ---------------------------------- |
-| Test runner             | Vitest (`bun test`)                |
+| Test runner             | Vitest (`pnpm test`)               |
 | Component testing       | `@testing-library/react` + Vitest  |
 | API/integration testing | Hono's `app.request()` test client |
-| E2E                     | Playwright (`bun run test:e2e`)    |
+| E2E                     | Playwright (`pnpm test:e2e`)       |
 
 Never use Jest, Mocha, Jasmine, or any other test runner. Vitest is the only prescribed runner.
 

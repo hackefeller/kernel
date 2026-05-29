@@ -154,8 +154,8 @@ fly logs --app <app-name>
 
 ```bash
 # Run migrations before deploying application code
-fly ssh console --app <app-name> -C "bun run db:migrate"
-fly ssh console --app <app-name> -C "bun run db:status"
+fly ssh console --app <app-name> -C "pnpm db:migrate"
+fly ssh console --app <app-name> -C "pnpm db:status"
 # If migration fails: do NOT deploy application code
 ```
 
@@ -192,7 +192,7 @@ If error rates spike, health checks fail, or user reports arrive — roll back i
 ```bash
 fly deploy --image <previous-image> --app <app-name>
 # For database rollback:
-fly ssh console --app <app-name> -C "bun run db:rollback"
+fly ssh console --app <app-name> -C "pnpm db:rollback"
 # Order: application first, then migration (reverse of deploy order)
 ```
 

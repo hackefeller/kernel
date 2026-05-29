@@ -92,7 +92,7 @@ render(
 After refactoring:
 
 - [ ] Run your project's import linter / import boundary checker
-- [ ] Run `bun run lint` (or your project's lint command)
+- [ ] Run `pnpm lint` (or your project's lint command)
 - [ ] Update test mocks if component signature changed
 - [ ] Verify no new console statements introduced
 - [ ] Test in Storybook (should work without any provider wrappers)

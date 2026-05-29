@@ -1,17 +1,17 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
+import { parseFrontmatter } from "../templates/frontmatter.js";
 import type {
-  AgentTemplate,
-  AgentHandoff,
-  CommandTemplate,
-  SkillTemplate,
-  TemplateProfile,
-  TemplateTag,
+    AgentHandoff,
+    AgentTemplate,
+    CommandTemplate,
+    SkillTemplate,
+    TemplateProfile,
+    TemplateReference,
+    TemplateTag,
 } from "../templates/types.js";
 import { VALID_TAGS } from "../templates/types.js";
-import { parseFrontmatter } from "../templates/frontmatter.js";
-import { BUNDLED_TEMPLATE_FILES } from "./bundled-templates.js";
 
 export interface TemplateRegistry {
   skills: SkillTemplate[];
@@ -37,11 +37,6 @@ const DEFAULT_COMMAND_TARGETS = new Set([
 ]);
 
 const registryCache = new Map<string, TemplateRegistry>();
-
-interface BundledTemplateFile {
-  path: string;
-  content: string;
-}
 
 const TemplateProfileSchema = z.enum(["core", "extended"] satisfies [TemplateProfile, ...TemplateProfile[]]);
 const CommandGroupSchema = z.enum(["system", "workflow", "specialist"]);
@@ -121,6 +116,41 @@ function parseOptionalHandoffs(value: unknown, filePath: string): AgentHandoff[]
     throw new Error(`Invalid handoffs in ${filePath}`);
   }
   return parsed.data;
+}
+
+export function collectTemplateReferences(templateDir: string, primaryFileName: string): TemplateReference[] | undefined {
+  if (!existsSync(templateDir)) {
+    return undefined;
+  }
+
+  const references: TemplateReference[] = [];
+
+  function walk(currentDir: string): void {
+    for (const entry of readdirSync(currentDir, { withFileTypes: true })) {
+      const absolutePath = path.join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        walk(absolutePath);
+        continue;
+      }
+      if (!entry.isFile()) {
+        continue;
+      }
+
+      const relativePath = path.relative(templateDir, absolutePath).replaceAll(path.sep, "/");
+      if (relativePath === primaryFileName) {
+        continue;
+      }
+
+      references.push({
+        relativePath,
+        content: readFileSync(absolutePath, "utf-8"),
+      });
+    }
+  }
+
+  walk(templateDir);
+  references.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
+  return references.length > 0 ? references : undefined;
 }
 
 function validateTags(tags: unknown, filePath: string): TemplateTag[] | undefined {
@@ -304,8 +334,38 @@ export function resetTemplateRegistryCache(): void {
   registryCache.clear();
 }
 
+function getExecutableDir(): string | undefined {
+  try {
+    return path.dirname(realpathSync(process.execPath));
+  } catch {
+    return undefined;
+  }
+}
+
+function resolveTemplateRoot(): string | undefined {
+  const candidateDirs = [
+    process.env.KERNEL_TEMPLATES_DIR,
+    path.resolve(import.meta.dirname, "..", "..", "templates"),
+    getExecutableDir() ? path.join(getExecutableDir()!, "templates") : undefined,
+    path.resolve(process.cwd(), "src/templates"),
+    path.resolve(process.cwd(), "templates"),
+  ];
+
+  for (const candidateDir of candidateDirs) {
+    if (candidateDir && existsSync(candidateDir)) {
+      return candidateDir;
+    }
+  }
+
+  return undefined;
+}
+
 function loadFromFilesystem(): TemplateRegistry {
-  const root = path.resolve(process.cwd(), "src/templates");
+  const root = resolveTemplateRoot();
+  if (!root) {
+    throw new Error("No kernel templates were found. Install the packaged templates or run from the repository source.");
+  }
+
   const skillsDir = path.join(root, "skills");
   const agentsDir = path.join(root, "agents");
   const commandsDir = path.join(root, "commands");
@@ -320,6 +380,7 @@ function loadFromFilesystem(): TemplateRegistry {
             const content = readFileSync(filePath, "utf-8");
             const template = parseSkillTemplate(filePath, content);
             template.name = entry.name;
+            template.references = collectTemplateReferences(path.join(skillsDir, entry.name), "SKILL.md");
             skills.push(template);
           } catch (err) {
             console.warn(`[registry] Skipping invalid skill template at ${filePath}: ${readErrorMessage(err)}`);
@@ -339,6 +400,7 @@ function loadFromFilesystem(): TemplateRegistry {
             const content = readFileSync(filePath, "utf-8");
             const template = parseAgentTemplate(filePath, content);
             template.name = entry.name;
+            template.references = collectTemplateReferences(path.join(agentsDir, entry.name), "AGENT.md");
             agents.push(template);
           } catch (err) {
             console.warn(`[registry] Skipping invalid agent template at ${filePath}: ${readErrorMessage(err)}`);
@@ -372,65 +434,15 @@ function loadFromFilesystem(): TemplateRegistry {
   });
 }
 
-function loadFromBundledFiles(): TemplateRegistry {
-  const skills: SkillTemplate[] = [];
-  for (const { path: filePath, content } of BUNDLED_TEMPLATE_FILES.skills as readonly BundledTemplateFile[]) {
-    const dirName = filePath.split("/").slice(-2, -1)[0];
-    try {
-      const template = parseSkillTemplate(filePath, content);
-      template.name = dirName;
-      skills.push(template);
-    } catch (err) {
-      console.warn(`[registry] Skipping invalid skill template at ${filePath}: ${readErrorMessage(err)}`);
-    }
-  }
-
-  const agents: AgentTemplate[] = [];
-  for (const { path: filePath, content } of BUNDLED_TEMPLATE_FILES.agents as readonly BundledTemplateFile[]) {
-    const dirName = filePath.split("/").slice(-2, -1)[0];
-    try {
-      const template = parseAgentTemplate(filePath, content);
-      template.name = dirName;
-      agents.push(template);
-    } catch (err) {
-      console.warn(`[registry] Skipping invalid agent template at ${filePath}: ${readErrorMessage(err)}`);
-    }
-  }
-
-  const commands: CommandTemplate[] = [];
-  for (const { path: filePath, content } of BUNDLED_TEMPLATE_FILES.commands as readonly BundledTemplateFile[]) {
-    const fileName = filePath.split("/").pop()!.replace(".md", "");
-    try {
-      const template = parseCommandTemplate(filePath, content);
-      template.name = fileName;
-      commands.push(template);
-    } catch (err) {
-      console.warn(`[registry] Skipping invalid command template at ${filePath}: ${readErrorMessage(err)}`);
-    }
-  }
-
-  return validateRegistry({
-    skills: skills.sort((left, right) => left.name.localeCompare(right.name)),
-    agents: agents.sort((left, right) => left.name.localeCompare(right.name)),
-    commands: commands.sort((left, right) => left.name.localeCompare(right.name)),
-  });
-}
-
 function hasTemplates(registry: TemplateRegistry): boolean {
   return registry.skills.length > 0 || registry.agents.length > 0 || registry.commands.length > 0;
 }
 
 export function loadTemplateRegistry(): TemplateRegistry {
-  const cacheKey = "bundled";
+  const cacheKey = "filesystem";
   const cached = registryCache.get(cacheKey);
   if (cached) {
     return cached;
-  }
-
-  const bundled = loadFromBundledFiles();
-  if (hasTemplates(bundled)) {
-    registryCache.set(cacheKey, bundled);
-    return bundled;
   }
 
   const filesystem = loadFromFilesystem();
@@ -439,6 +451,6 @@ export function loadTemplateRegistry(): TemplateRegistry {
     return filesystem;
   }
 
-  throw new Error("No kernel templates were found. Rebuild the binary from the repository source.");
+  throw new Error("No kernel templates were found. Install the packaged templates or run from the repository source.");
 }
 

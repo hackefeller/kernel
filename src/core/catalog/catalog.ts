@@ -1,12 +1,12 @@
 import * as fs from "node:fs/promises";
 import path from "node:path";
 import * as yaml from "yaml";
-import { renderCatalogOutputs, type RenderedOutput } from "../render/index.js";
-import { loadTemplateRegistry, parseAgentTemplate, parseSkillTemplate } from "../registry/index.js";
+import { collectTemplateReferences, loadTemplateRegistry, parseAgentTemplate, parseSkillTemplate } from "../registry/index.js";
 import { resolveCatalog } from "../registry/resolver.js";
+import { renderCatalogOutputs, type RenderedOutput } from "../render/index.js";
 import { directoryExists, fileExists, readFile } from "../utils/file-system.js";
 import { getAgentsRoot, getCatalogHome, loadCatalogConfig } from "./config.js";
-import type { CatalogConfig, BuiltInCatalog } from "./types.js";
+import type { BuiltInCatalog, CatalogConfig } from "./types.js";
 
 const ADAPTER_VERSION = "2.0.0";
 
@@ -187,6 +187,7 @@ async function loadLocalCatalogSource(homePath: string, config: CatalogConfig | 
     const content = await readFile(skillPath);
     const template = parseSkillTemplate(skillPath, content);
     template.name = entry.name;
+    template.references = collectTemplateReferences(skillDir, "SKILL.md");
     skills.push(template);
     skillOutputs.push(
       ...(await collectFileOutputs(skillDir, path.join(agentsRoot, "skills", entry.name), entry.name)),
@@ -208,6 +209,7 @@ async function loadLocalCatalogSource(homePath: string, config: CatalogConfig | 
     const content = await readFile(agentPath);
     const template = parseAgentTemplate(agentPath, content);
     template.name = entry.name;
+    template.references = collectTemplateReferences(agentDir, "AGENT.md");
     agents.push(template);
     agentOutputs.push(
       ...(await collectFileOutputs(agentDir, path.join(agentsRoot, "agents", entry.name), entry.name)),

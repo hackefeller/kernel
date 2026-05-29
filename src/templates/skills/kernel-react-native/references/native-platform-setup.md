@@ -12,7 +12,7 @@ Navigate iOS and Android tooling, dependency management, and build systems in Re
 
 | Platform   | IDE            | Package Manager   | Build System |
 | ---------- | -------------- | ----------------- | ------------ |
-| JavaScript | VS Code        | npm/yarn/pnpm/bun | Metro        |
+| JavaScript | VS Code        | pnpm              | Metro        |
 | iOS        | Xcode          | CocoaPods         | xcodebuild   |
 | Android    | Android Studio | Gradle            | Gradle       |
 
@@ -33,14 +33,14 @@ xed ios/                            # Open Xcode
 
 ## Dependency Management
 
-### JavaScript (npm/yarn/pnpm/bun)
+### JavaScript (pnpm)
 
-Infer package manager from lockfile: `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lockb`.
+The standard JavaScript package manager is `pnpm`. Expect a `pnpm-lock.yaml` lockfile.
 
 ### iOS (CocoaPods)
 
 ```bash
-# Install pods after npm install
+# Install pods after pnpm install
 bundle install
 cd ios && bundle exec pod install
 

@@ -27,8 +27,8 @@
   ],
   "type": "module",
   "scripts": {
-    "generate:templates": "bun ./tools/scripts/generate-bundled-templates.ts",
-    "build": "bun run generate:templates && rm -rf dist && bun build ./src/cli/main.ts --compile --outfile ./dist/kernel",
+    "copy:templates": "bun ./tools/scripts/copy-templates.ts",
+    "build": "rm -rf dist && bun build ./src/cli/main.ts --compile --outfile ./dist/kernel && bun run copy:templates",
     "dev:cli": "bun ./src/cli/main.ts",
     "link": "ln -sf $PWD/dist/kernel /usr/local/bin/kernel",
     "test": "bun test",

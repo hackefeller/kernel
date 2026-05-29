@@ -33,7 +33,7 @@ make db-rollback-sync
 
 # Roll back on dev only
 make db-rollback
-# or: bun run db:rollback
+# or: pnpm db:rollback
 
 # Roll back on test only
 make db-rollback-test
@@ -49,7 +49,7 @@ After rollback, always verify types are still consistent:
 
 ```bash
 make db-verify-types
-bun run typecheck
+pnpm typecheck
 ```
 
 ## Production Deployments
@@ -81,8 +81,8 @@ Migrations always run **before** the application code that requires them. Never 
 ### Production Apply Commands
 
 ```bash
-DATABASE_URL=$PROD_DATABASE_URL bun run --filter @your-pkg/db goose:status
-DATABASE_URL=$PROD_DATABASE_URL bun run --filter @your-pkg/db goose:up
+DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @your-pkg/db goose:status
+DATABASE_URL=$PROD_DATABASE_URL pnpm --filter @your-pkg/db goose:up
 ```
 
 Always check status before applying. Confirm the pending migration count matches expectations.

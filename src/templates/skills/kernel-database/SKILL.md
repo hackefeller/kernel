@@ -126,7 +126,7 @@ Use the scaffold command — never create files by hand:
 
 ```bash
 make db-new-migration NAME=add_users_table
-# or: bun run db:migration:new add_users_table
+# or: pnpm db:migration:new add_users_table
 ```
 
 ### File Structure (Goose)
@@ -244,8 +244,8 @@ If you are working on a greenfield baseline track, use the project’s fresh-dat
 ```bash
 make db-generate-types
 make db-verify-types
-bun run lint
-bun run typecheck
+pnpm lint
+pnpm typecheck
 ```
 
 Never leave a migration merged with stale generated types.

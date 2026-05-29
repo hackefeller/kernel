@@ -14,6 +14,11 @@ describe("template registry", () => {
 
   it("discovers skills and commands from disk", () => {
     expect(registry.skills.some((template) => template.name === "kernel-review")).toBe(true);
+    expect(
+      registry.skills.find((template) => template.name === "kernel-project")?.references?.some(
+        (reference) => reference.relativePath === "references/scaffold.md",
+      ),
+    ).toBe(true);
     // kernel-plan is now a command, not an agent
     expect(registry.commands.some((template) => template.name === "kernel-plan")).toBe(true);
     expect(registry.commands.some((template) => template.name === "kernel-task-plan")).toBe(true);
@@ -63,7 +68,7 @@ body`;
     expect(() => parseCommandTemplate("command.md", content)).toThrow("Invalid group in command.md");
   });
 
-  it("loads bundled templates when cwd is outside the repo", async () => {
+  it("loads templates when cwd is outside the repo", async () => {
     const originalCwd = process.cwd();
     const tmpDir = await mkTmpDir();
     process.chdir(tmpDir);
@@ -72,6 +77,11 @@ body`;
     try {
       const registry = loadTemplateRegistry();
       expect(registry.skills.some((template) => template.name === "kernel-review")).toBe(true);
+      expect(
+        registry.skills.find((template) => template.name === "kernel-project")?.references?.some(
+          (reference) => reference.relativePath === "references/scaffold.md",
+        ),
+      ).toBe(true);
       expect(registry.agents).toHaveLength(0);
     } finally {
       process.chdir(originalCwd);
