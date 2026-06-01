@@ -56,7 +56,7 @@ export const SKILL_NAMES = {
   PDF: prefixKernelTemplateName("pdf"),
   REACT: prefixKernelTemplateName("react"),
   TESTING: prefixKernelTemplateName("testing"),
-  TYPESCRIPT_ARCHITECTURE: prefixKernelTemplateName("typescript-architecture"),
+  TYPESCRIPT: prefixKernelTemplateName("typescript"),
   // Mobile skills
   REACT_NATIVE: prefixKernelTemplateName("react-native"),
 
@@ -81,16 +81,7 @@ export const COMMAND_NAMES = {
   SYNC: prefixKernelTemplateName("sync"),
   DOCTOR: prefixKernelTemplateName("doctor"),
   GH_PR_ERRORS: prefixKernelTemplateName("gh-pr-errors"),
-  GOAL_NEW: prefixKernelTemplateName("goal-new"),
-  GOAL_PLAN: prefixKernelTemplateName("goal-plan"),
-  GOAL_STATUS: prefixKernelTemplateName("goal-status"),
-  GOAL_LIST: prefixKernelTemplateName("goal-list"),
   GOAL_DONE: prefixKernelTemplateName("goal-done"),
-  TASK_NEW: prefixKernelTemplateName("task-new"),
-  TASK_PLAN: prefixKernelTemplateName("task-plan"),
   TASK_DONE: prefixKernelTemplateName("task-done"),
   TASK_STATUS: prefixKernelTemplateName("task-status"),
-  TASK_ARCHIVE: prefixKernelTemplateName("task-archive"),
-  TASK_LIST: prefixKernelTemplateName("task-list"),
-  KNOWLEDGE_LIST: prefixKernelTemplateName("knowledge-list"),
 } as const;

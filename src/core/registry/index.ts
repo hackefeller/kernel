@@ -22,18 +22,9 @@ export interface TemplateRegistry {
 const DEFAULT_COMMAND_TARGETS = new Set([
   "sync",
   "doctor",
-  "goal new",
-  "goal plan",
-  "goal status",
-  "goal list",
   "goal done",
-  "task new",
-  "task plan",
   "task done",
   "task status",
-  "task archive",
-  "task list",
-  "knowledge list",
 ]);
 
 const registryCache = new Map<string, TemplateRegistry>();

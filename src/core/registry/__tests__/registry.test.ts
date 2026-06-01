@@ -21,8 +21,6 @@ describe("template registry", () => {
     ).toBe(true);
     // kernel-plan is now a command, not an agent
     expect(registry.commands.some((template) => template.name === "kernel-plan")).toBe(true);
-    expect(registry.commands.some((template) => template.name === "kernel-task-plan")).toBe(true);
-    expect(registry.commands.some((template) => template.name === "kernel-goal-new")).toBe(true);
     expect(registry.agents).toHaveLength(0);
   });
 

@@ -4,7 +4,7 @@ kind: command
 tags:
   - workflow
   - planning
-description: Turn a spark into goals, tasks, and knowledge in the repo-local .kernel project memory.
+description: Turn a spark into goals, tasks, and knowledge.
 group: workflow
 argumentHint: spark, optional goal/task ref, or empty for interactive intake
 backedBySkill: kernel-plan
@@ -12,7 +12,8 @@ backedBySkill: kernel-plan
 
 Use this to turn an unstructured idea, bug, feature request, or strategic direction into durable work in `.kernel`.
 
-Start with a spark, not a record type.  
+Start with a spark, not a record type.
+
 Kernel investigates the repo and `.kernel` first, asks only necessary questions, then decides the right structure and breaks the work into concrete tasks.
 
 Plans live in `.kernel`, not chat:
